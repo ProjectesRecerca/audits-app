@@ -1,0 +1,559 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#F7F8FA;
+    --surface:#FFFFFF;
+    --line:#E4E6EB;
+    --navy:#1F5FBF;
+    --navy-ink:#154A96;
+    --ink:#16181D;
+    --muted:#6B7280;
+    --accent:#1F5FBF;
+    --accent-ink:#154A96;
+    --brand-red:#C8272E;
+    --brand-red-ink:#A31F26;
+    --nocal:#9CA3AF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:14px;
+  }
+  h1,h2,h3{font-family:'Inter',system-ui,sans-serif; margin:0; color:var(--ink); font-weight:800; letter-spacing:-0.01em;}
+
+  .app{ max-width:1200px; margin:0 auto; padding:28px 24px 60px; }
+
+  /* ── Top bar ───────────────────────────────────────────── */
+  .topbar{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; margin-bottom:22px; flex-wrap:wrap;
+  }
+  .topbar h1{ font-size:24px; font-weight:800; letter-spacing:-0.01em; }
+  .logo-mark{
+    width:40px; height:40px; border-radius:9px; background:var(--brand-red);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:20px; flex-shrink:0;
+  }
+  .topbar .sub{ color:var(--muted); font-size:13px; margin-top:4px; }
+  .controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  select, input[type=text], input[type=date], input[type=month]{
+    font-family:inherit; font-size:13.5px;
+    padding:9px 12px; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink);
+  }
+  select:focus, input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .btn{
+    font-family:inherit; font-size:13.5px; font-weight:600;
+    padding:10px 16px; border-radius:8px; border:none; cursor:pointer;
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--accent); color:#fff; }
+  .btn-primary:hover{ background:var(--accent-ink); }
+  .btn-primary:disabled{ opacity:.6; cursor:default; }
+  .btn-ghost{ background:transparent; color:var(--navy); border:1px solid var(--line); }
+  .btn-ghost:hover{ background:#EFF1EE; }
+
+  /* ── Sync status ───────────────────────────────────────── */
+  .sync-status{ font-size:11.5px; color:var(--muted); margin:-10px 0 18px 2px; display:flex; align-items:center; gap:6px; }
+  .sync-status .dot{ width:6px; height:6px; border-radius:50%; background:#3FA66B; display:inline-block; }
+  .sync-status.stale .dot{ background:#C4762A; }
+
+  /* ── Hero: next audit callout ─────────────────────────── */
+  .hero{
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-ink) 100%);
+    color:#fff; border-radius:14px; padding:22px 26px; margin-bottom:22px;
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  }
+  .hero .eyebrow{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; opacity:.7; margin-bottom:6px;}
+  .hero .headline{ font-size:22px; font-weight:700; }
+  .hero .headline b{ color:#FFD9DB; font-weight:800; }
+  .hero .meta{ font-size:12.5px; opacity:.8; margin-top:4px; }
+  .stat-row{ display:flex; gap:22px; }
+  .stat{ text-align:center; }
+  .stat .n{ font-size:26px; font-weight:800; }
+  .stat .l{ font-size:11px; opacity:.75; text-transform:uppercase; letter-spacing:.05em; }
+
+  /* ── Table ─────────────────────────────────────────────── */
+  .month-group{ margin-bottom:18px; }
+  .month-title{
+    font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--navy); padding:6px 2px; border-bottom:2px solid var(--navy); margin-bottom:8px;
+  }
+  table{ width:100%; border-collapse:collapse; background:var(--surface); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 2px rgba(20,30,45,.05);}
+  thead th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--muted); font-weight:600; padding:9px 12px; border-bottom:1px solid var(--line);
+  }
+  tbody td{ padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tbody tr.audit-row{ cursor:pointer; }
+  tbody tr.audit-row:hover{ background:#FAFAF8; }
+  .manager-pill{
+    display:inline-block; padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:600;
+    background:#EEF1F6; color:var(--navy);
+  }
+  .badge{
+    display:inline-block; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:600; color:#fff;
+  }
+  .badge.Yes{ background:var(--brand-red); }
+  .badge.NotNeeded{ background:var(--nocal); }
+  .name-cell b{ display:block; }
+  .name-cell span{ color:var(--muted); font-size:12px; }
+  .comment-count{ color:var(--muted); font-size:12px; }
+
+  .detail-row td{ background:#FAFAF8; padding:0; }
+  .detail-inner{ padding:14px 18px 18px; }
+  .comment-log{ white-space:pre-wrap; font-size:13px; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; }
+  .comment-log.empty{ color:var(--muted); font-style:italic; }
+  .add-comment{ display:flex; gap:8px; }
+  .add-comment input{ flex:1; }
+
+  .empty{ color:var(--muted); padding:30px; text-align:center; font-size:13.5px; }
+
+  .today-divider{
+    display:flex; align-items:center; gap:10px; padding:6px 12px; margin:2px 0;
+    font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-red-ink);
+  }
+  .today-divider::before, .today-divider::after{ content:''; flex:1; height:1px; background:var(--brand-red); opacity:.4; }
+
+  /* ── Lateral drawer ────────────────────────────────────── */
+  .overlay{
+    position:fixed; inset:0; background:rgba(22,30,45,.35);
+    opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:20;
+  }
+  .overlay.open{ opacity:1; pointer-events:auto; }
+
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:420px; max-width:92vw;
+    background:var(--surface); box-shadow:-8px 0 24px rgba(20,30,45,.15);
+    transform:translateX(100%); transition:transform .22s ease; z-index:21;
+    display:flex; flex-direction:column;
+  }
+  .drawer.open{ transform:translateX(0); }
+  .drawer-head{ padding:20px 22px 14px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;}
+  .drawer-head h2{ font-size:19px; }
+  .drawer-close{ background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer; }
+  .drawer-body{ padding:18px 22px; overflow-y:auto; flex:1; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:5px; }
+  .field input, .field select{ width:100%; }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .drawer-foot{ padding:16px 22px; border-top:1px solid var(--line); display:flex; gap:10px; justify-content:flex-end; }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--navy-ink); color:#fff; padding:11px 20px; border-radius:8px; font-size:13px;
+    opacity:0; pointer-events:none; transition:all .2s ease; z-index:30;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+
+<div class="app">
+
+  <div class="topbar">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="logo-mark">◎</div>
+      <div>
+        <h1>Seguiment d'Auditories</h1>
+        <div class="sub">Oficina de Projectes — Universitat</div>
+      </div>
+    </div>
+    <div class="controls">
+      <select id="filterManager"><option value="">Totes les gestores</option></select>
+      <input type="text" id="searchBox" placeholder="Cerca projecte o acrònim…" style="width:200px;">
+      <button class="btn btn-ghost" id="btnRefresh" title="Actualitzar ara">⟳</button>
+      <button class="btn btn-primary" id="btnNew">+ Nova auditoria</button>
+    </div>
+  </div>
+  <div class="sync-status" id="syncStatus">Sincronitzant…</div>
+
+  <div class="hero" id="heroCard"></div>
+
+  <div id="tableContainer"></div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h2>Nova auditoria</h2>
+    <button class="drawer-close" id="drawerClose">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field">
+      <label>Mes d'auditoria</label>
+      <input type="month" id="f_month">
+    </div>
+    <div class="field">
+      <label>Gestora</label>
+      <select id="f_manager"></select>
+    </div>
+    <div class="field">
+      <label>Nom PI</label>
+      <input type="text" id="f_namepi" placeholder="p. ex. Bustos, Maria Paula">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Acrònim</label>
+        <input type="text" id="f_acronym" placeholder="p. ex. ClimateAdapt">
+      </div>
+      <div class="field">
+        <label>Programa (Call ID)</label>
+        <input type="text" id="f_programme" placeholder="p. ex. HEUROPE-ERC-CoG">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>CS</label>
+        <input type="text" id="f_cs" placeholder="p. ex. 1/2, 2/2, 1/4…">
+      </div>
+      <div class="field">
+        <label>Auditoria</label>
+        <select id="f_audit">
+          <option value="Yes">Yes</option>
+          <option value="Not needed">Not needed</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Enviat (data)</label>
+      <input type="date" id="f_sent">
+    </div>
+    <div class="field">
+      <label>Comentari inicial (opcional)</label>
+      <input type="text" id="f_comment" placeholder="p. ex. Preparar accounting del segon any…">
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" id="btnCancel">Cancel·lar</button>
+    <button class="btn btn-primary" id="btnSave">Guardar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONFIG = {
+  APPS_SCRIPT_URL: "https://script.google.com/a/macros/upf.edu/s/AKfycbxL3U1yETSvVLnOvS6Ma6DPizihw7J4rhWH-OdxvPq8iAqtVmCRW9-CqBITyGri1NxdzA/exec",
+  API_TOKEN: "07ca1742-991f-4f47-925e-f668e908b434",
+  DEMO_MODE: true   // true = runs on sample data only, no network calls. Set false once wired up.
+};
+
+const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
+const MANAGERS = ['Marta','Paula','Josep N.','Nerea','Mar Morral','Paloma','Laia','Mar'];
+
+/* In-memory demo store (resets on reload) — mirrors the shape the real API returns.
+   Single flat table now: one row = one audit event, independent of other rows
+   for the same project. */
+let DB = { audits: [] };
+let expandedId = null;
+
+function currentYYYYMM(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function seedDemoData(){
+  const rows = [
+    ['2026-09','Paula','Bustos, Maria Paula','ClimateAdapt','HEUROPE-ERC-CoG','1/2','2026-09-05','Yes',''],
+    ['2026-09','Josep N.','Marco Madella','ROOTS','HEUROPE-ERC-CoG','1/2','','Not needed',''],
+    ['2026-09','Nerea','Conte, Bruno','SPEED','HEu-MSCA-PF','1/1','','Not needed','Recordar Final Report 11/2026'],
+    ['2026-10','Marta','M.Güell','SCRIBE','HE-ERC-CoG','1/2','','Yes','AUDITORIA INTERNA (01/05/2024-31/10/26) 30 M'],
+    ['2026-10','Mar','NEU, Gergely','SCALER','H2020 - ERC - STG','4/4','','Yes','AUDIT FS3 + FS4 (ja passada FS1+FS2)'],
+    ['2026-09','Laia','Gonzalez Ballester, MA','EarCanals3D','','2/3','','Not needed','Preparar accounting del segon any i parlar amb la Karen per demanar 3rd year payment'],
+    ['2026-09','Paloma','Prieto, Pilar','ANTRAG','Aj. Internacional','4/4','','Not needed',''],
+    // Same project, two independent rows for two different CS periods — exactly the case being tested:
+    ['2026-08','Josep N.','REVILLA, Melanie','WEB DATA OPP','H2020 - ERC - StG','3/4','','Yes',''],
+    ['2027-02','Josep N.','REVILLA, Melanie','WEB DATA OPP','H2020 - ERC - StG','4/4','','Yes',''],
+  ];
+  DB.audits = rows.map((r,i)=>({
+    id:'demo-'+i, audit_month:r[0], manager:r[1], name_pi:r[2], acronym:r[3], programme:r[4],
+    cs:r[5], sent_date:r[6], audit:r[7], comments:r[8], last_modified:new Date().toISOString()
+  }));
+}
+
+/* ── API layer ─────────────────────────────────────────────────────────── */
+async function apiGet(){
+  if (CONFIG.DEMO_MODE) return DB;
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL);
+  return res.json();
+}
+async function apiPost(action, data){
+  if (CONFIG.DEMO_MODE){
+    if (action==='addAudit'){
+      const id='demo-'+Date.now();
+      DB.audits.push({ id, ...data, last_modified:new Date().toISOString() });
+      return {id};
+    }
+    if (action==='appendComment'){
+      const row = DB.audits.find(a=>a.id===data.id);
+      if (row){
+        const stamp = new Date().toLocaleString('ca-ES');
+        const line = `[${stamp}] ${data.author}: ${data.text}`;
+        row.comments = row.comments ? row.comments + '\n' + line : line;
+      }
+      return {updated:true};
+    }
+  }
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // avoids CORS preflight against Apps Script
+    body: JSON.stringify({ token: CONFIG.API_TOKEN, action, data })
+  });
+  return res.json();
+}
+
+/* ── Rendering ─────────────────────────────────────────────────────────── */
+function populateManagerControls(){
+  const sel = document.getElementById('filterManager');
+  const fsel = document.getElementById('f_manager');
+  MANAGERS.forEach(m=>{
+    sel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
+    fsel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
+  });
+}
+
+function monthLabel(yyyymm){
+  if (!yyyymm) return 'Sense mes';
+  const [y,m] = yyyymm.split('-');
+  return `${MONTHS[parseInt(m,10)-1]} ${y}`;
+}
+
+function formatDate(s){
+  if(!s) return '—';
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  return d.toLocaleDateString('ca-ES', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function renderHero(){
+  const now = currentYYYYMM();
+  const upcoming = DB.audits
+    .filter(a=>a.audit==='Yes' && a.audit_month)
+    .sort((a,b)=> a.audit_month.localeCompare(b.audit_month));
+  const next = upcoming.find(a=> a.audit_month >= now) || upcoming[upcoming.length-1];
+  const thisMonth = DB.audits.filter(a=>a.audit_month===now).length;
+  const pending = DB.audits.filter(a=>a.audit==='Yes').length;
+
+  document.getElementById('heroCard').innerHTML = next ? `
+    <div>
+      <div class="eyebrow">Propera auditoria pendent</div>
+      <div class="headline"><b>${next.acronym || next.name_pi}</b> — ${next.manager}</div>
+      <div class="meta">${monthLabel(next.audit_month)} · CS ${next.cs || '—'}</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><div class="n">${pending}</div><div class="l">Pendents (Yes)</div></div>
+      <div class="stat"><div class="n">${thisMonth}</div><div class="l">Aquest mes</div></div>
+      <div class="stat"><div class="n">${DB.audits.length}</div><div class="l">Total línies</div></div>
+    </div>` : `<div class="headline">Cap auditoria pendent registrada</div>`;
+}
+
+function getFilters(){
+  return {
+    manager: document.getElementById('filterManager').value,
+    q: document.getElementById('searchBox').value.trim().toLowerCase()
+  };
+}
+
+function renderRow(a){
+  const cls = a.audit === 'Yes' ? 'Yes' : 'NotNeeded';
+  const hasComments = a.comments && a.comments.trim().length > 0;
+  let html = `<tr class="audit-row" data-id="${a.id}">
+    <td><span class="manager-pill">${a.manager}</span></td>
+    <td class="name-cell"><b>${a.acronym || '—'}</b><span>${a.name_pi}</span></td>
+    <td>${a.programme || '—'}</td>
+    <td>${a.cs || '—'}</td>
+    <td>${formatDate(a.sent_date)}</td>
+    <td><span class="badge ${cls}">${a.audit}</span></td>
+    <td class="comment-count">${hasComments ? '💬' : ''}</td>
+  </tr>`;
+  if (expandedId === a.id){
+    html += `<tr class="detail-row"><td colspan="7"><div class="detail-inner">
+      <div class="comment-log ${hasComments?'':'empty'}">${hasComments ? a.comments : 'Encara no hi ha comentaris.'}</div>
+      <div class="add-comment">
+        <input type="text" placeholder="Afegir un comentari…" id="newComment-${a.id}">
+        <button class="btn btn-ghost" onclick="submitComment('${a.id}')">Afegir</button>
+      </div>
+    </div></td></tr>`;
+  }
+  return html;
+}
+
+function todayDividerHTML(){
+  return `<div class="today-divider" id="todayMarker">Aquest mes — ${monthLabel(currentYYYYMM())}</div>`;
+}
+
+function renderTable(){
+  const { manager, q } = getFilters();
+  let rows = [...DB.audits];
+  if (manager) rows = rows.filter(a=>a.manager===manager);
+  if (q) rows = rows.filter(a =>
+    (a.name_pi||'').toLowerCase().includes(q) ||
+    (a.acronym||'').toLowerCase().includes(q));
+
+  // Chronological order throughout, by audit_month ("YYYY-MM" sorts correctly as text).
+  // Nothing is cut off by date — past rows at the top, future rows below.
+  rows.sort((a,b)=> (a.audit_month||'').localeCompare(b.audit_month||''));
+
+  const container = document.getElementById('tableContainer');
+  if (rows.length===0){
+    container.innerHTML = `<div class="empty">No hi ha auditories que coincideixin amb aquest filtre.</div>`;
+    return;
+  }
+
+  const now = currentYYYYMM();
+  let todayInserted = rows.length ? rows[rows.length-1].audit_month < now : true; // all past → skip marker
+  let currentGroup = null;
+  let html = '';
+
+  rows.forEach(a=>{
+    const label = monthLabel(a.audit_month);
+    const crossesToday = !todayInserted && a.audit_month >= now;
+
+    if (label !== currentGroup){
+      if (currentGroup !== null) html += `</tbody></table></div>`;
+      if (crossesToday){ html += todayDividerHTML(); todayInserted = true; }
+      html += `<div class="month-group"><div class="month-title">${label}</div>
+        <table><thead><tr>
+          <th>Gestora</th><th>Nom PI / Acrònim</th><th>Programa</th><th>CS</th><th>Enviat</th><th>Auditoria</th><th></th>
+        </tr></thead><tbody>`;
+      currentGroup = label;
+    } else if (crossesToday){
+      html += `</tbody></table></div>`;
+      html += todayDividerHTML();
+      html += `<div class="month-group"><table><tbody>`;
+    }
+    html += renderRow(a);
+  });
+  html += `</tbody></table></div>`;
+
+  container.innerHTML = html;
+
+  document.querySelectorAll('.audit-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const id = row.dataset.id;
+      expandedId = (expandedId === id) ? null : id;
+      renderTable();
+    });
+  });
+}
+
+function scrollToToday(){
+  const marker = document.getElementById('todayMarker');
+  if (marker) marker.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+async function submitComment(auditId){
+  const input = document.getElementById('newComment-'+auditId);
+  const text = input.value.trim();
+  if (!text) return;
+  await apiPost('appendComment', { id: auditId, author: 'Tu', text });
+  await refresh();
+  showToast('Comentari desat');
+}
+
+/* ── Drawer ────────────────────────────────────────────────────────────── */
+function openDrawer(){
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  ['f_month','f_namepi','f_acronym','f_programme','f_cs','f_sent','f_comment'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function saveAudit(){
+  const audit_month = document.getElementById('f_month').value; // "YYYY-MM"
+  if (!audit_month){ showToast("Cal indicar el mes d'auditoria"); return; }
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true; btn.textContent = 'Desant…';
+
+  const data = {
+    audit_month: audit_month,
+    manager: document.getElementById('f_manager').value,
+    name_pi: document.getElementById('f_namepi').value,
+    acronym: document.getElementById('f_acronym').value,
+    programme: document.getElementById('f_programme').value,
+    cs: document.getElementById('f_cs').value,
+    sent_date: document.getElementById('f_sent').value,
+    audit: document.getElementById('f_audit').value,
+    comments: ''
+  };
+
+  const initialComment = document.getElementById('f_comment').value.trim();
+  const result = await apiPost('addAudit', data);
+  if (initialComment && result.id){
+    await apiPost('appendComment', { id: result.id, author: data.manager || 'Tu', text: initialComment });
+  }
+  await refresh();
+  closeDrawer();
+  showToast('Auditoria desada');
+  btn.disabled = false; btn.textContent = 'Guardar';
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ── Wire up events ────────────────────────────────────────────────────── */
+document.getElementById('btnNew').addEventListener('click', openDrawer);
+document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+document.getElementById('btnCancel').addEventListener('click', closeDrawer);
+document.getElementById('overlay').addEventListener('click', closeDrawer);
+document.getElementById('btnSave').addEventListener('click', saveAudit);
+document.getElementById('filterManager').addEventListener('change', renderTable);
+document.getElementById('searchBox').addEventListener('input', renderTable);
+document.getElementById('btnRefresh').addEventListener('click', ()=>refresh(true));
+
+const POLL_MS = 30000; // re-check the sheet every 30s so other people's edits show up on their own
+
+function setSyncStatus(state){
+  const el = document.getElementById('syncStatus');
+  const now = new Date().toLocaleTimeString('ca-ES', { hour:'2-digit', minute:'2-digit' });
+  if (state === 'syncing'){
+    el.classList.remove('stale');
+    el.innerHTML = `<span class="dot"></span> Sincronitzant amb el Google Sheet…`;
+  } else if (state === 'error'){
+    el.classList.add('stale');
+    el.innerHTML = `<span class="dot"></span> No s'ha pogut sincronitzar. Comprovant de nou…`;
+  } else {
+    el.classList.remove('stale');
+    el.innerHTML = `<span class="dot"></span> Actualitzat amb el Google Sheet a les ${now}`;
+  }
+}
+
+async function refresh(userTriggered){
+  setSyncStatus('syncing');
+  try {
+    if (!CONFIG.DEMO_MODE){
+      const data = await apiGet();
+      DB = data;
+    }
+    renderHero();
+    renderTable();
+    setSyncStatus('ok');
+    if (userTriggered) showToast('Dades actualitzades');
+  } catch (err){
+    setSyncStatus('error');
+  }
+}
+
+/* ── Init ──────────────────────────────────────────────────────────────── */
+populateManagerControls();
+if (CONFIG.DEMO_MODE) seedDemoData();
+refresh().then(scrollToToday);
+
+setInterval(()=>refresh(), POLL_MS);               // keeps other PMs' changes showing up automatically
+window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
+</script>
