@@ -664,7 +664,7 @@ function handleCredentialResponse(response){
   // This is just a fast, friendly UX check so people see the right message quickly.
   // The real gate is server-side: every API call sends this same raw token, and
   // Apps Script verifies it against Google directly before touching the sheet.
-  if (!email.endsWith("@your-university.edu")){   // ← replace with the real institutional domain
+  if (!email.endsWith("@upf.edu")){   // ← replace with the real institutional domain
     alert("Accés restringit al personal de la institució.");
     return;
   }
