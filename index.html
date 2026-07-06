@@ -322,7 +322,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-
+/* ────────────────────────────────────────────────────────────────────────
+   CONFIG — point this at your real Apps Script Web App once deployed.
+   See "Step 4" of the implementation guide.
+   ──────────────────────────────────────────────────────────────────────── */
 const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/a/macros/upf.edu/s/AKfycbxL3U1yETSvVLnOvS6Ma6DPizihw7J4rhWH-OdxvPq8iAqtVmCRW9-CqBITyGri1NxdzA/exec",
   DEMO_MODE: false   // true = runs on sample data only, no network calls. Set false once wired up.
@@ -616,7 +619,7 @@ document.getElementById('btnRefresh').addEventListener('click', ()=>refresh(true
 
 const POLL_MS = 30000; // re-check the sheet every 30s so other people's edits show up on their own
 
-function setSyncStatus(state){
+function setSyncStatus(state, detail){
   const el = document.getElementById('syncStatus');
   const now = new Date().toLocaleTimeString('ca-ES', { hour:'2-digit', minute:'2-digit' });
   if (state === 'syncing'){
@@ -624,7 +627,7 @@ function setSyncStatus(state){
     el.innerHTML = `<span class="dot"></span> Sincronitzant amb el Google Sheet…`;
   } else if (state === 'error'){
     el.classList.add('stale');
-    el.innerHTML = `<span class="dot"></span> No s'ha pogut sincronitzar. Comprovant de nou…`;
+    el.innerHTML = `<span class="dot"></span> Error de sincronització: ${detail || 'desconegut'} (mira la consola per més detall)`;
   } else {
     el.classList.remove('stale');
     el.innerHTML = `<span class="dot"></span> Actualitzat amb el Google Sheet a les ${now}`;
@@ -636,6 +639,11 @@ async function refresh(userTriggered){
   try {
     if (!CONFIG.DEMO_MODE){
       const data = await apiGet();
+      if (data.error){
+        console.error('Sync rejected by server:', data.error); // ← check this in dev tools (F12) console
+        setSyncStatus('error', data.error);
+        return;
+      }
       DB = data;
     }
     renderMonthNav();
@@ -643,7 +651,8 @@ async function refresh(userTriggered){
     setSyncStatus('ok');
     if (userTriggered) showToast('Dades actualitzades');
   } catch (err){
-    setSyncStatus('error');
+    console.error('Sync failed:', err);
+    setSyncStatus('error', err.message);
   }
 }
 
@@ -655,7 +664,7 @@ function handleCredentialResponse(response){
   // This is just a fast, friendly UX check so people see the right message quickly.
   // The real gate is server-side: every API call sends this same raw token, and
   // Apps Script verifies it against Google directly before touching the sheet.
-  if (!email.endsWith("@upf.edu")){   // ← replace with the real institutional domain
+  if (!email.endsWith("@your-university.edu")){   // ← replace with the real institutional domain
     alert("Accés restringit al personal de la institució.");
     return;
   }
@@ -675,5 +684,15 @@ function startApp(){
 
   setInterval(()=>refresh(), POLL_MS);               // keeps other PMs' changes showing up automatically
   window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
+}
+
+/* ── Demo-mode bootstrap ──────────────────────────────────────────────────
+   DEMO_MODE never needs a real Google Sign-In setup — it skips the login
+   screen entirely so the UI can be previewed before OAUTH_CLIENT_ID exists.
+   This runs immediately on page load, before any Sign-In button is touched. */
+if (CONFIG.DEMO_MODE){
+  document.getElementById("login").style.display = "none";
+  document.getElementById("private").style.display = "block";
+  startApp();
 }
 </script>
