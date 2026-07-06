@@ -108,6 +108,11 @@
 
   .detail-row td{ background:#FAFAF8; padding:0; }
   .detail-inner{ padding:14px 18px 18px; }
+  .field-hint{ font-size:11.5px; color:var(--muted); margin-top:4px; }
+
+  .reminder-block{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+  .reminder-block label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  .reminder-status{ font-size:11.5px; color:var(--navy); margin-top:6px; }
   .comment-log{ white-space:pre-wrap; font-size:13px; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; }
   .comment-log.empty{ color:var(--muted); font-style:italic; }
   .add-comment{ display:flex; gap:8px; }
@@ -118,7 +123,13 @@
   .month-nav{ display:flex; gap:7px; align-items:center; overflow-x:auto; padding:2px 2px 16px; }
   .month-nav::-webkit-scrollbar{ height:5px; }
   .month-nav::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
-  .year-tag{ flex-shrink:0; font-size:11px; font-weight:800; color:var(--muted); padding:0 4px 0 8px; }
+  .year-chip{
+    flex-shrink:0; font-family:inherit; font-size:12.5px; font-weight:800; white-space:nowrap;
+    padding:7px 14px; border-radius:20px; border:1px solid var(--navy); background:var(--surface);
+    color:var(--navy); cursor:pointer; transition:background .1s ease;
+  }
+  .year-chip:hover{ background:#EEF1F6; }
+  .year-chip.open{ background:var(--navy); color:#fff; }
   .month-chip{
     flex-shrink:0; font-family:inherit; font-size:12px; font-weight:600; white-space:nowrap;
     padding:7px 13px; border-radius:20px; border:1px solid var(--line); background:var(--surface);
@@ -126,6 +137,20 @@
   }
   .month-chip:hover{ background:#EFF1EE; }
   .month-chip.current{ border-color:var(--brand-red); color:var(--brand-red-ink); background:#FDEEEF; font-weight:800; }
+
+  .month-collapsed{
+    display:flex; align-items:center; gap:12px; padding:10px 14px; margin-bottom:10px;
+    background:var(--surface); border:1px solid var(--line); border-radius:8px;
+    cursor:pointer; transition:background .1s ease;
+  }
+  .month-collapsed:hover{ background:#FAFAF8; }
+  .month-collapsed .mc-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .month-collapsed .mc-count{ font-size:12px; color:var(--muted); flex:1; }
+  .month-collapsed .mc-toggle{ font-size:12px; font-weight:600; color:var(--navy); }
+  .btn-link{
+    background:none; border:none; font-size:11px; font-weight:600; color:var(--navy);
+    cursor:pointer; text-decoration:underline; padding:0; margin-left:8px;
+  }
 
   .today-divider{
     display:flex; align-items:center; gap:10px; padding:6px 12px; margin:2px 0;
@@ -202,9 +227,9 @@
   <div class="login-card">
     <div class="logo-mark">◎</div>
     <h2>Seguiment d'Auditories</h2>
-    <p>Oficina de Projectes — Universitat<br>Accés restringit al personal de la institució.</p>
+    <p>Servei de Recerca - Universitat Pompeu Fabra<br>Accés restringit al personal de la institució.</p>
     <div id="g_id_onload"
-         data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
+         data-client_id="YOUR_CLIENT_ID.apps.googleusercontent.com"
          data-callback="handleCredentialResponse"
          data-auto_prompt="false">
     </div>
@@ -220,7 +245,7 @@
       <div class="logo-mark">◎</div>
       <div>
         <h1>Seguiment d'Auditories</h1>
-        <div class="sub">Oficina de Projectes — Universitat</div>
+        <div class="sub">Servei de Recerca - Universitat Pompeu Fabra</div>
       </div>
     </div>
     <div class="controls">
@@ -252,6 +277,7 @@
     <div class="field">
       <label>Gestora</label>
       <select id="f_manager"></select>
+      <div class="field-hint" id="f_manager_email_hint"></div>
     </div>
     <div class="field">
       <label>Nom PI</label>
@@ -334,13 +360,23 @@ const CONFIG = {
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
 
 const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
-const MANAGERS = ['Marta','Paula','Josep N.','Nerea','Mar Morral','Paloma','Laia','Mar'];
+const MANAGERS = [
+  { name:'Marta',      email:'marta@upf.edu' },
+  { name:'Paula',      email:'paula@upf.edu' },
+  { name:'Josep N.',   email:'josep.n@upf.edu' },
+  { name:'Nerea',      email:'nerea@upf.edu' },
+  { name:'Paloma',     email:'paloma@upf.edu' },
+  { name:'Laia',       email:'laia@upf.edu' },
+  { name:'Mar',        email:'mar@upf.edu' },
+];
 
 /* In-memory demo store (resets on reload) — mirrors the shape the real API returns.
    Single flat table: one row = one audit event, independent of other rows
    for the same project. */
 let DB = { audits: [] };
 let expandedId = null;
+let expandedPastMonths = new Set(); // month keys ("YYYY-MM") the PM has chosen to expand
+let expandedYear = null;            // set to the current year on first render
 
 function currentYYYYMM(){
   const d = new Date();
@@ -362,8 +398,8 @@ function seedDemoData(){
     ['2027-02','Josep N.','REVILLA, Melanie','WEB DATA OPP','H2020 - ERC - StG','4/4','','Yes',''],
   ];
   DB.audits = rows.map((r,i)=>({
-    id:'demo-'+i, audit_month:r[0], manager:r[1], name_pi:r[2], acronym:r[3], programme:r[4],
-    cs:r[5], sent_date:r[6], audit:r[7], comments:r[8], last_modified:new Date().toISOString()
+    id:'demo-'+i, audit_month:r[0], manager:r[1], manager_email:managerEmailFor(r[1]), name_pi:r[2], acronym:r[3], programme:r[4],
+    cs:r[5], sent_date:r[6], audit:r[7], comments:r[8], reminder_date:'', reminder_sent:'', last_modified:new Date().toISOString()
   }));
 }
 
@@ -389,6 +425,14 @@ async function apiPost(action, data){
       }
       return {updated:true};
     }
+    if (action==='setReminder'){
+      const row = DB.audits.find(a=>a.id===data.id);
+      if (row){
+        row.reminder_date = data.reminder_date || '';
+        row.reminder_sent = '';
+      }
+      return {updated:true};
+    }
   }
   const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
     method:'POST',
@@ -403,9 +447,22 @@ function populateManagerControls(){
   const sel = document.getElementById('filterManager');
   const fsel = document.getElementById('f_manager');
   MANAGERS.forEach(m=>{
-    sel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
-    fsel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
+    sel.insertAdjacentHTML('beforeend', `<option value="${m.name}">${m.name}</option>`);
+    fsel.insertAdjacentHTML('beforeend', `<option value="${m.name}">${m.name}</option>`);
   });
+  fsel.addEventListener('change', updateManagerEmailHint);
+  updateManagerEmailHint();
+}
+
+function updateManagerEmailHint(){
+  const name = document.getElementById('f_manager').value;
+  const found = MANAGERS.find(m=>m.name===name);
+  document.getElementById('f_manager_email_hint').textContent = found ? found.email : '';
+}
+
+function managerEmailFor(name){
+  const found = MANAGERS.find(m=>m.name===name);
+  return found ? found.email : '';
 }
 
 function monthLabel(yyyymm){
@@ -428,25 +485,56 @@ function getFilters(){
   };
 }
 
+function toDateInputValue(v){
+  if (!v) return '';
+  if (typeof v === 'string' && v.length >= 10) return v.slice(0,10); // handles both "YYYY-MM-DD" and ISO datetime strings
+  return '';
+}
+
+function formatCS(v){
+  if (!v) return '—';
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)){
+    const d = new Date(v);
+    return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
+  }
+  return v;
+}
+
 function renderRow(a){
   const cls = a.audit === 'Yes' ? 'Yes' : 'NotNeeded';
   const hasComments = a.comments && a.comments.trim().length > 0;
+  const hasReminder = a.reminder_date && !a.reminder_sent;
   let html = `<tr class="audit-row" data-id="${a.id}">
     <td><span class="manager-pill">${a.manager}</span></td>
     <td class="name-cell"><b>${a.acronym || '—'}</b><span>${a.name_pi}</span></td>
     <td>${a.programme || '—'}</td>
-    <td>${a.cs || '—'}</td>
+    <td>${formatCS(a.cs)}</td>
     <td>${formatDate(a.sent_date)}</td>
     <td><span class="badge ${cls}">${a.audit}</span></td>
-    <td class="comment-count">${hasComments ? '💬' : ''}</td>
+    <td class="comment-count">${hasComments ? '💬' : ''}${hasReminder ? ' 🔔' : ''}</td>
   </tr>`;
   if (expandedId === a.id){
     const comments = a.comments;
+    const reminderInputVal = toDateInputValue(a.reminder_date);
+    let reminderStatus = '';
+    if (a.reminder_sent) reminderStatus = `Enviat el ${formatDate(a.reminder_sent)}`;
+    else if (a.reminder_date) reminderStatus = `Programat per ${formatDate(a.reminder_date)} (a ${a.manager_email || 'sense correu'})`;
+
     html += `<tr class="detail-row"><td colspan="7"><div class="detail-inner">
       <div class="comment-log ${hasComments?'':'empty'}">${hasComments ? comments : 'Encara no hi ha comentaris.'}</div>
       <div class="add-comment">
         <input type="text" placeholder="Afegir un comentari…" id="newComment-${a.id}">
         <button class="btn btn-ghost" onclick="submitComment('${a.id}')">Afegir</button>
+      </div>
+
+      <div class="reminder-block">
+        <label>🕐 Recordatori per correu (${a.manager_email || 'sense correu de gestora'})</label>
+        <div class="add-comment">
+          <input type="date" id="reminderDate-${a.id}" value="${reminderInputVal}">
+          <button class="btn btn-ghost" onclick="saveReminder('${a.id}')">Desa recordatori</button>
+          ${a.reminder_date && !a.reminder_sent ? `<button class="btn-link" onclick="clearReminder('${a.id}')">Elimina</button>` : ''}
+        </div>
+        ${reminderStatus ? `<div class="reminder-status">${reminderStatus}</div>` : ''}
       </div>
     </div></td></tr>`;
   }
@@ -455,6 +543,18 @@ function renderRow(a){
 
 function todayDividerHTML(){
   return `<div class="today-divider" id="todayMarker">Aquest mes — ${monthLabel(currentYYYYMM())}</div>`;
+}
+
+function todayDividerHTML(){
+  return `<div class="today-divider" id="todayMarker">Aquest mes — ${monthLabel(currentYYYYMM())}</div>`;
+}
+
+function collapsedMonthHTML(monthKey, label, count){
+  return `<div class="month-collapsed" id="group-${monthKey}" onclick="togglePastMonth('${monthKey}')">
+    <span class="mc-label">${label}</span>
+    <span class="mc-count">${count} auditoria${count!==1?'s':''}</span>
+    <span class="mc-toggle">Mostra ▾</span>
+  </div>`;
 }
 
 function renderTable(){
@@ -475,31 +575,42 @@ function renderTable(){
     return;
   }
 
+  // Group into ordered buckets by month (rows are already sorted, so insertion order = chronological order).
+  const groups = new Map();
+  rows.forEach(a=>{
+    if (!groups.has(a.audit_month)) groups.set(a.audit_month, []);
+    groups.get(a.audit_month).push(a);
+  });
+
   const now = currentYYYYMM();
-  let todayInserted = rows.length ? rows[rows.length-1].audit_month < now : true; // all past → skip marker
-  let currentGroup = null;
+  let dividerPlaced = false;
   let html = '';
 
-  rows.forEach(a=>{
-    const label = monthLabel(a.audit_month);
-    const crossesToday = !todayInserted && a.audit_month >= now;
+  groups.forEach((items, monthKey)=>{
+    const label = monthLabel(monthKey);
+    const isPast = monthKey < now;
 
-    if (label !== currentGroup){
-      if (currentGroup !== null) html += `</tbody></table></div>`;
-      if (crossesToday){ html += todayDividerHTML(); todayInserted = true; }
-      html += `<div class="month-group" id="group-${a.audit_month}"><div class="month-title">${label}</div>
-        <table><thead><tr>
-          <th>Gestora</th><th>Nom PI / Acrònim</th><th>Programa</th><th>CS</th><th>Enviat</th><th>Auditoria</th><th></th>
-        </tr></thead><tbody>`;
-      currentGroup = label;
-    } else if (crossesToday){
-      html += `</tbody></table></div>`;
+    if (!dividerPlaced && monthKey >= now){
       html += todayDividerHTML();
-      html += `<div class="month-group"><table><tbody>`;
+      dividerPlaced = true;
     }
-    html += renderRow(a);
+
+    if (isPast && !expandedPastMonths.has(monthKey)){
+      // Collapsed by default — every past month is still in the data and reachable,
+      // just condensed to a one-line summary until a PM asks to see it.
+      html += collapsedMonthHTML(monthKey, label, items.length);
+      return;
+    }
+
+    const hideBtn = isPast ? `<button class="btn-link" onclick="togglePastMonth('${monthKey}')">Amaga</button>` : '';
+    html += `<div class="month-group" id="group-${monthKey}">
+      <div class="month-title">${label} ${hideBtn}</div>
+      <table><thead><tr>
+        <th>Gestora</th><th>Nom PI / Acrònim</th><th>Programa</th><th>CS</th><th>Enviat</th><th>Auditoria</th><th></th>
+      </tr></thead><tbody>`;
+    items.forEach(a=>{ html += renderRow(a); });
+    html += `</tbody></table></div>`;
   });
-  html += `</tbody></table></div>`;
 
   container.innerHTML = html;
 
@@ -512,6 +623,12 @@ function renderTable(){
   });
 }
 
+function togglePastMonth(monthKey){
+  if (expandedPastMonths.has(monthKey)) expandedPastMonths.delete(monthKey);
+  else expandedPastMonths.add(monthKey);
+  renderTable();
+}
+
 function scrollToToday(){
   const marker = document.getElementById('todayMarker');
   if (marker) marker.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -519,24 +636,40 @@ function scrollToToday(){
 
 function renderMonthNav(){
   const months = [...new Set(DB.audits.map(a=>a.audit_month).filter(Boolean))].sort();
+  const years = [...new Set(months.map(m=>m.slice(0,4)))].sort();
+  if (expandedYear === null) expandedYear = String(new Date().getFullYear());
+
   const container = document.getElementById('monthNav');
   const now = currentYYYYMM();
   let html = '';
-  let lastYear = null;
-  months.forEach(m=>{
-    const year = m.slice(0,4);
-    if (year !== lastYear){
-      html += `<span class="year-tag">${year}</span>`;
-      lastYear = year;
+
+  years.forEach(y=>{
+    const isOpen = y === expandedYear;
+    html += `<button class="year-chip ${isOpen?'open':''}" data-year="${y}">${y}</button>`;
+    if (isOpen){
+      months.filter(m=>m.startsWith(y)).forEach(m=>{
+        const short = MONTHS[parseInt(m.slice(5,7),10)-1].slice(0,3);
+        const cls = m === now ? 'month-chip current' : 'month-chip';
+        html += `<button class="${cls}" data-month="${m}">${short}</button>`;
+      });
     }
-    const short = MONTHS[parseInt(m.slice(5,7),10)-1].slice(0,3);
-    const cls = m === now ? 'month-chip current' : 'month-chip';
-    html += `<button class="${cls}" data-month="${m}">${short}</button>`;
   });
+
   container.innerHTML = html;
+
+  container.querySelectorAll('.year-chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const y = btn.dataset.year;
+      expandedYear = (expandedYear === y) ? null : y;
+      renderMonthNav();
+    });
+  });
   container.querySelectorAll('.month-chip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const target = document.getElementById('group-'+btn.dataset.month);
+      const monthKey = btn.dataset.month;
+      if (monthKey < now) expandedPastMonths.add(monthKey); // expand it first so there's something to scroll to
+      renderTable();
+      const target = document.getElementById('group-'+monthKey);
       if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
     });
   });
@@ -551,6 +684,20 @@ async function submitComment(auditId){
   showToast('Comentari desat');
 }
 
+async function saveReminder(auditId){
+  const val = document.getElementById('reminderDate-'+auditId).value;
+  if (!val){ showToast('Selecciona una data primer'); return; }
+  await apiPost('setReminder', { id: auditId, reminder_date: val });
+  await refresh();
+  showToast('Recordatori programat');
+}
+
+async function clearReminder(auditId){
+  await apiPost('setReminder', { id: auditId, reminder_date: '' });
+  await refresh();
+  showToast('Recordatori eliminat');
+}
+
 /* ── Drawer ────────────────────────────────────────────────────────────── */
 function openDrawer(){
   document.getElementById('drawer').classList.add('open');
@@ -560,6 +707,7 @@ function closeDrawer(){
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
   ['f_month','f_namepi','f_acronym','f_programme','f_cs','f_sent','f_comment'].forEach(id=>document.getElementById(id).value='');
+  updateManagerEmailHint();
 }
 
 async function saveAudit(){
@@ -572,6 +720,7 @@ async function saveAudit(){
   const data = {
     audit_month: audit_month,
     manager: document.getElementById('f_manager').value,
+    manager_email: managerEmailFor(document.getElementById('f_manager').value),
     name_pi: document.getElementById('f_namepi').value,
     acronym: document.getElementById('f_acronym').value,
     programme: document.getElementById('f_programme').value,
