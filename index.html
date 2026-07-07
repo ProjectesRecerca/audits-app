@@ -120,23 +120,20 @@
 
   .empty{ color:var(--muted); padding:30px; text-align:center; font-size:13.5px; }
 
-  .month-nav{ display:flex; gap:7px; align-items:center; overflow-x:auto; padding:2px 2px 16px; }
-  .month-nav::-webkit-scrollbar{ height:5px; }
-  .month-nav::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
-  .year-chip{
-    flex-shrink:0; font-family:inherit; font-size:12.5px; font-weight:800; white-space:nowrap;
-    padding:7px 14px; border-radius:20px; border:1px solid var(--navy); background:var(--surface);
-    color:var(--navy); cursor:pointer; transition:background .1s ease;
+  .month-nav{ padding:2px 2px 16px; }
+  .bubble-row{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:8px; }
+  .bubble-row:last-child{ margin-bottom:0; }
+  .bubble{
+    font-family:inherit; font-weight:600; white-space:nowrap; cursor:pointer;
+    border-radius:20px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink); transition:background .1s ease, border-color .1s ease;
   }
-  .year-chip:hover{ background:#EEF1F6; }
-  .year-chip.open{ background:var(--navy); color:#fff; }
-  .month-chip{
-    flex-shrink:0; font-family:inherit; font-size:12px; font-weight:600; white-space:nowrap;
-    padding:7px 13px; border-radius:20px; border:1px solid var(--line); background:var(--surface);
-    color:var(--ink); cursor:pointer; transition:background .1s ease;
-  }
-  .month-chip:hover{ background:#EFF1EE; }
-  .month-chip.current{ border-color:var(--brand-red); color:var(--brand-red-ink); background:#FDEEEF; font-weight:800; }
+  .year-bubble{ font-size:12.5px; font-weight:800; padding:7px 15px; border:1px solid var(--navy); color:var(--navy); }
+  .year-bubble:hover{ background:#EEF1F6; }
+  .year-bubble.active{ background:var(--navy); color:#fff; }
+  .month-bubble{ font-size:12px; padding:6px 13px; }
+  .month-bubble:hover{ background:#EFF1EE; }
+  .month-bubble.current{ border-color:var(--brand-red); color:var(--brand-red-ink); background:#FDEEEF; font-weight:800; }
 
   .month-collapsed{
     display:flex; align-items:center; gap:12px; padding:10px 14px; margin-bottom:10px;
@@ -147,6 +144,14 @@
   .month-collapsed .mc-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .month-collapsed .mc-count{ font-size:12px; color:var(--muted); flex:1; }
   .month-collapsed .mc-toggle{ font-size:12px; font-weight:600; color:var(--navy); }
+
+  .past-block-header{
+    display:flex; align-items:center; justify-content:space-between; padding:8px 14px; margin-bottom:10px;
+    background:#EEF1F6; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.04em; color:var(--navy);
+  }
+  .past-block-header:hover{ background:#E4E9F2; }
+  .past-block-header .mc-toggle{ font-size:12px; font-weight:600; }
   .btn-link{
     background:none; border:none; font-size:11px; font-weight:600; color:var(--navy);
     cursor:pointer; text-decoration:underline; padding:0; margin-left:8px;
@@ -198,6 +203,17 @@
     display:flex; align-items:center; justify-content:center;
   }
   .chat-fab:hover{ background:var(--navy-ink); }
+
+  .top-fab{
+    position:fixed; bottom:24px; left:24px; width:48px; height:48px; border-radius:50%;
+    background:var(--surface); color:var(--navy); border:1px solid var(--line); font-size:18px; cursor:pointer;
+    box-shadow:0 4px 14px rgba(20,30,45,.15); z-index:24;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transform:translateY(8px);
+    transition:opacity .15s ease, transform .15s ease, background .1s ease;
+  }
+  .top-fab.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  .top-fab:hover{ background:#EEF1F6; }
   .chat-panel{
     position:fixed; bottom:88px; right:24px; width:340px; max-width:88vw;
     background:var(--surface); border:1px solid var(--line); border-radius:14px;
@@ -229,7 +245,7 @@
     <h2>Seguiment d'Auditories</h2>
     <p>Servei de Recerca - Universitat Pompeu Fabra<br>Accés restringit al personal de la institució.</p>
     <div id="g_id_onload"
-         data-client_id="YOUR_CLIENT_ID.apps.googleusercontent.com"
+         data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
          data-callback="handleCredentialResponse"
          data-auto_prompt="false">
     </div>
@@ -277,7 +293,10 @@
     <div class="field">
       <label>Gestora</label>
       <select id="f_manager"></select>
-      <div class="field-hint" id="f_manager_email_hint"></div>
+    </div>
+    <div class="field">
+      <label>Correu de la gestora (per a recordatoris)</label>
+      <input type="email" id="f_manager_email" placeholder="p. ex. gestora@upf.edu">
     </div>
     <div class="field">
       <label>Nom PI</label>
@@ -323,6 +342,7 @@
 
 <!-- ── AI chat module (UI only — not functional yet) ────────────────────── -->
 <button class="chat-fab" id="chatFab" title="Assistent (properament)">💬</button>
+<button class="top-fab" id="topFab" title="Torna a dalt">↑</button>
 <div class="chat-panel" id="chatPanel">
   <div class="chat-head">
     <b>Assistent d'auditories</b>
@@ -357,26 +377,18 @@ const CONFIG = {
   DEMO_MODE: false   // true = runs on sample data only, no network calls. Set false once wired up.
 };
 
+
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
 
 const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
-const MANAGERS = [
-  { name:'Marta',      email:'marta@upf.edu' },
-  { name:'Paula',      email:'paula@upf.edu' },
-  { name:'Josep N.',   email:'josep.n@upf.edu' },
-  { name:'Nerea',      email:'nerea@upf.edu' },
-  { name:'Paloma',     email:'paloma@upf.edu' },
-  { name:'Laia',       email:'laia@upf.edu' },
-  { name:'Mar',        email:'mar@upf.edu' },
-];
+const MANAGERS = ['Marta B.','Mireia M.','Paula Z.','Josep N.','Nerea M.','Nuria C.','Paloma B.','Laia S.','Mar S.'];
 
 /* In-memory demo store (resets on reload) — mirrors the shape the real API returns.
    Single flat table: one row = one audit event, independent of other rows
    for the same project. */
 let DB = { audits: [] };
 let expandedId = null;
-let expandedPastMonths = new Set(); // month keys ("YYYY-MM") the PM has chosen to expand
-let expandedYear = null;            // set to the current year on first render
+let pastExpanded = false; // whether the single "Auditories anteriors" block is expanded
 
 function currentYYYYMM(){
   const d = new Date();
@@ -398,7 +410,7 @@ function seedDemoData(){
     ['2027-02','Josep N.','REVILLA, Melanie','WEB DATA OPP','H2020 - ERC - StG','4/4','','Yes',''],
   ];
   DB.audits = rows.map((r,i)=>({
-    id:'demo-'+i, audit_month:r[0], manager:r[1], manager_email:managerEmailFor(r[1]), name_pi:r[2], acronym:r[3], programme:r[4],
+    id:'demo-'+i, audit_month:r[0], manager:r[1], manager_email:r[1].toLowerCase().replace(/[^a-z]/g,'.')+'@upf.edu', name_pi:r[2], acronym:r[3], programme:r[4],
     cs:r[5], sent_date:r[6], audit:r[7], comments:r[8], reminder_date:'', reminder_sent:'', last_modified:new Date().toISOString()
   }));
 }
@@ -420,7 +432,7 @@ async function apiPost(action, data){
       const row = DB.audits.find(a=>a.id===data.id);
       if (row){
         const stamp = new Date().toLocaleString('ca-ES');
-        const line = `[${stamp}] tu@your-university.edu: ${data.text}`;
+        const line = `[${stamp}] tu@upf.edu: ${data.text}`;
         row.comments = row.comments ? row.comments + '\n' + line : line;
       }
       return {updated:true};
@@ -430,6 +442,7 @@ async function apiPost(action, data){
       if (row){
         row.reminder_date = data.reminder_date || '';
         row.reminder_sent = '';
+        if (data.manager_email) row.manager_email = data.manager_email;
       }
       return {updated:true};
     }
@@ -447,22 +460,23 @@ function populateManagerControls(){
   const sel = document.getElementById('filterManager');
   const fsel = document.getElementById('f_manager');
   MANAGERS.forEach(m=>{
-    sel.insertAdjacentHTML('beforeend', `<option value="${m.name}">${m.name}</option>`);
-    fsel.insertAdjacentHTML('beforeend', `<option value="${m.name}">${m.name}</option>`);
+    sel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
+    fsel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
   });
-  fsel.addEventListener('change', updateManagerEmailHint);
-  updateManagerEmailHint();
+  fsel.addEventListener('change', suggestManagerEmailFromHistory);
 }
 
-function updateManagerEmailHint(){
+// Convenience only — looks up the most recent existing row for this manager
+// and suggests that email, but never overwrites something already typed, and
+// is always editable. The email itself only ever lives in the Sheet's rows,
+// never in this code, so a changed email needs no redeploy — just editing
+// (or simply typing over) the field next time.
+function suggestManagerEmailFromHistory(){
+  const emailField = document.getElementById('f_manager_email');
+  if (emailField.value.trim()) return; // don't clobber something the PM already typed
   const name = document.getElementById('f_manager').value;
-  const found = MANAGERS.find(m=>m.name===name);
-  document.getElementById('f_manager_email_hint').textContent = found ? found.email : '';
-}
-
-function managerEmailFor(name){
-  const found = MANAGERS.find(m=>m.name===name);
-  return found ? found.email : '';
+  const match = [...DB.audits].reverse().find(a=>a.manager===name && a.manager_email);
+  if (match) emailField.value = match.manager_email;
 }
 
 function monthLabel(yyyymm){
@@ -528,8 +542,9 @@ function renderRow(a){
       </div>
 
       <div class="reminder-block">
-        <label>🕐 Recordatori per correu (${a.manager_email || 'sense correu de gestora'})</label>
+        <label>🕐 Recordatori per correu</label>
         <div class="add-comment">
+          <input type="email" id="reminderEmail-${a.id}" placeholder="correu@upf.edu" value="${a.manager_email || ''}" style="flex:1.4;">
           <input type="date" id="reminderDate-${a.id}" value="${reminderInputVal}">
           <button class="btn btn-ghost" onclick="saveReminder('${a.id}')">Desa recordatori</button>
           ${a.reminder_date && !a.reminder_sent ? `<button class="btn-link" onclick="clearReminder('${a.id}')">Elimina</button>` : ''}
@@ -545,14 +560,10 @@ function todayDividerHTML(){
   return `<div class="today-divider" id="todayMarker">Aquest mes — ${monthLabel(currentYYYYMM())}</div>`;
 }
 
-function todayDividerHTML(){
-  return `<div class="today-divider" id="todayMarker">Aquest mes — ${monthLabel(currentYYYYMM())}</div>`;
-}
-
-function collapsedMonthHTML(monthKey, label, count){
-  return `<div class="month-collapsed" id="group-${monthKey}" onclick="togglePastMonth('${monthKey}')">
-    <span class="mc-label">${label}</span>
-    <span class="mc-count">${count} auditoria${count!==1?'s':''}</span>
+function pastBlockCollapsedHTML(count, monthCount){
+  return `<div class="month-collapsed" id="pastAuditsBlock" onclick="togglePastAudits()">
+    <span class="mc-label">Auditories anteriors</span>
+    <span class="mc-count">${count} auditoria${count!==1?'s':''} en ${monthCount} mes${monthCount!==1?'os':''}</span>
     <span class="mc-toggle">Mostra ▾</span>
   </div>`;
 }
@@ -583,28 +594,37 @@ function renderTable(){
   });
 
   const now = currentYYYYMM();
-  let dividerPlaced = false;
+  const pastEntries = [...groups.entries()].filter(([m])=> m < now);
+  const presentFutureEntries = [...groups.entries()].filter(([m])=> m >= now);
   let html = '';
 
-  groups.forEach((items, monthKey)=>{
-    const label = monthLabel(monthKey);
-    const isPast = monthKey < now;
-
-    if (!dividerPlaced && monthKey >= now){
-      html += todayDividerHTML();
-      dividerPlaced = true;
+  if (pastEntries.length > 0){
+    const totalPastCount = pastEntries.reduce((sum,[,items])=> sum + items.length, 0);
+    if (!pastExpanded){
+      // Everything before this month collapses into one block — still fully
+      // in the data, just condensed so it doesn't dominate the screen.
+      html += pastBlockCollapsedHTML(totalPastCount, pastEntries.length);
+    } else {
+      html += `<div class="past-block-header" onclick="togglePastAudits()">
+        <span>Auditories anteriors (${totalPastCount})</span>
+        <span class="mc-toggle">Amaga ▴</span>
+      </div>`;
+      pastEntries.forEach(([monthKey, items])=>{
+        html += `<div class="month-group" id="group-${monthKey}">
+          <div class="month-title">${monthLabel(monthKey)}</div>
+          <table><thead><tr>
+            <th>Gestora</th><th>Nom PI / Acrònim</th><th>Programa</th><th>CS</th><th>Enviat</th><th>Auditoria</th><th></th>
+          </tr></thead><tbody>`;
+        items.forEach(a=>{ html += renderRow(a); });
+        html += `</tbody></table></div>`;
+      });
     }
+  }
 
-    if (isPast && !expandedPastMonths.has(monthKey)){
-      // Collapsed by default — every past month is still in the data and reachable,
-      // just condensed to a one-line summary until a PM asks to see it.
-      html += collapsedMonthHTML(monthKey, label, items.length);
-      return;
-    }
-
-    const hideBtn = isPast ? `<button class="btn-link" onclick="togglePastMonth('${monthKey}')">Amaga</button>` : '';
+  presentFutureEntries.forEach(([monthKey, items], idx)=>{
+    if (idx === 0) html += todayDividerHTML();
     html += `<div class="month-group" id="group-${monthKey}">
-      <div class="month-title">${label} ${hideBtn}</div>
+      <div class="month-title">${monthLabel(monthKey)}</div>
       <table><thead><tr>
         <th>Gestora</th><th>Nom PI / Acrònim</th><th>Programa</th><th>CS</th><th>Enviat</th><th>Auditoria</th><th></th>
       </tr></thead><tbody>`;
@@ -623,9 +643,8 @@ function renderTable(){
   });
 }
 
-function togglePastMonth(monthKey){
-  if (expandedPastMonths.has(monthKey)) expandedPastMonths.delete(monthKey);
-  else expandedPastMonths.add(monthKey);
+function togglePastAudits(){
+  pastExpanded = !pastExpanded;
   renderTable();
 }
 
@@ -634,40 +653,49 @@ function scrollToToday(){
   if (marker) marker.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
+let selectedNavYear = null; // which year's bubble is currently active in the nav strip
+
 function renderMonthNav(){
   const months = [...new Set(DB.audits.map(a=>a.audit_month).filter(Boolean))].sort();
   const years = [...new Set(months.map(m=>m.slice(0,4)))].sort();
-  if (expandedYear === null) expandedYear = String(new Date().getFullYear());
+  const now = currentYYYYMM();
+  const thisYear = String(new Date().getFullYear());
 
   const container = document.getElementById('monthNav');
-  const now = currentYYYYMM();
-  let html = '';
+  if (years.length === 0){ container.innerHTML = ''; return; }
 
+  if (selectedNavYear === null || !years.includes(selectedNavYear)){
+    selectedNavYear = years.includes(thisYear) ? thisYear : years[years.length-1];
+  }
+
+  container.innerHTML = `
+    <div class="bubble-row" id="yearBubbles"></div>
+    <div class="bubble-row" id="monthBubbles"></div>
+  `;
+
+  const yearRow = document.getElementById('yearBubbles');
   years.forEach(y=>{
-    const isOpen = y === expandedYear;
-    html += `<button class="year-chip ${isOpen?'open':''}" data-year="${y}">${y}</button>`;
-    if (isOpen){
-      months.filter(m=>m.startsWith(y)).forEach(m=>{
-        const short = MONTHS[parseInt(m.slice(5,7),10)-1].slice(0,3);
-        const cls = m === now ? 'month-chip current' : 'month-chip';
-        html += `<button class="${cls}" data-month="${m}">${short}</button>`;
-      });
-    }
+    const cls = y === selectedNavYear ? 'bubble year-bubble active' : 'bubble year-bubble';
+    yearRow.insertAdjacentHTML('beforeend', `<button class="${cls}" data-year="${y}">${y}</button>`);
   });
-
-  container.innerHTML = html;
-
-  container.querySelectorAll('.year-chip').forEach(btn=>{
+  yearRow.querySelectorAll('.year-bubble').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const y = btn.dataset.year;
-      expandedYear = (expandedYear === y) ? null : y;
+      selectedNavYear = btn.dataset.year;
       renderMonthNav();
     });
   });
-  container.querySelectorAll('.month-chip').forEach(btn=>{
+
+  const monthRow = document.getElementById('monthBubbles');
+  const monthsInYear = months.filter(m=>m.startsWith(selectedNavYear));
+  monthsInYear.forEach(m=>{
+    const name = MONTHS[parseInt(m.slice(5,7),10)-1].slice(0,3);
+    const cls = m === now ? 'bubble month-bubble current' : 'bubble month-bubble';
+    monthRow.insertAdjacentHTML('beforeend', `<button class="${cls}" data-month="${m}">${name}</button>`);
+  });
+  monthRow.querySelectorAll('.month-bubble').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const monthKey = btn.dataset.month;
-      if (monthKey < now) expandedPastMonths.add(monthKey); // expand it first so there's something to scroll to
+      if (monthKey < now) pastExpanded = true; // expand the whole past block first so there's something to scroll to
       renderTable();
       const target = document.getElementById('group-'+monthKey);
       if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -685,9 +713,11 @@ async function submitComment(auditId){
 }
 
 async function saveReminder(auditId){
-  const val = document.getElementById('reminderDate-'+auditId).value;
-  if (!val){ showToast('Selecciona una data primer'); return; }
-  await apiPost('setReminder', { id: auditId, reminder_date: val });
+  const dateVal = document.getElementById('reminderDate-'+auditId).value;
+  const emailVal = document.getElementById('reminderEmail-'+auditId).value.trim();
+  if (!dateVal){ showToast('Selecciona una data primer'); return; }
+  if (!emailVal){ showToast('Cal un correu per enviar el recordatori'); return; }
+  await apiPost('setReminder', { id: auditId, reminder_date: dateVal, manager_email: emailVal });
   await refresh();
   showToast('Recordatori programat');
 }
@@ -706,8 +736,7 @@ function openDrawer(){
 function closeDrawer(){
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
-  ['f_month','f_namepi','f_acronym','f_programme','f_cs','f_sent','f_comment'].forEach(id=>document.getElementById(id).value='');
-  updateManagerEmailHint();
+  ['f_month','f_namepi','f_acronym','f_programme','f_cs','f_sent','f_comment','f_manager_email'].forEach(id=>document.getElementById(id).value='');
 }
 
 async function saveAudit(){
@@ -720,7 +749,7 @@ async function saveAudit(){
   const data = {
     audit_month: audit_month,
     manager: document.getElementById('f_manager').value,
-    manager_email: managerEmailFor(document.getElementById('f_manager').value),
+    manager_email: document.getElementById('f_manager_email').value.trim(),
     name_pi: document.getElementById('f_namepi').value,
     acronym: document.getElementById('f_acronym').value,
     programme: document.getElementById('f_programme').value,
@@ -751,6 +780,14 @@ function showToast(msg){
 /* ── AI chat module (placeholder toggle only) ─────────────────────────── */
 document.getElementById('chatFab').addEventListener('click', ()=>{
   document.getElementById('chatPanel').classList.toggle('open');
+});
+
+const topFab = document.getElementById('topFab');
+window.addEventListener('scroll', ()=>{
+  topFab.classList.toggle('show', window.scrollY > 400);
+});
+topFab.addEventListener('click', ()=>{
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 document.getElementById('chatClose').addEventListener('click', ()=>{
   document.getElementById('chatPanel').classList.remove('open');
