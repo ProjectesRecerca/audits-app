@@ -113,6 +113,8 @@
   .reminder-block{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
   .reminder-block label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; }
   .reminder-status{ font-size:11.5px; color:var(--navy); margin-top:6px; }
+  .reminder-warning{ color:var(--brand-red-ink); font-weight:600; }
+  .reminder-warning-box{ font-size:12.5px; color:var(--muted); background:#FAFAF8; border:1px dashed var(--line); border-radius:8px; padding:10px 12px; }
   .comment-log{ white-space:pre-wrap; font-size:13px; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; }
   .comment-log.empty{ color:var(--muted); font-style:italic; }
   .add-comment{ display:flex; gap:8px; }
@@ -292,7 +294,9 @@
     </div>
     <div class="field">
       <label>Gestora</label>
-      <select id="f_manager"></select>
+      <input type="text" id="f_manager" list="managerSuggestions" placeholder="Escriu un nom existent o un de nou…">
+      <datalist id="managerSuggestions"></datalist>
+      <div class="field-hint">Si és una gestora nova, simplement escriu el seu nom — no cal fer cap canvi al codi.</div>
     </div>
     <div class="field">
       <label>Correu de la gestora (per a recordatoris)</label>
@@ -373,19 +377,13 @@
    See "Step 4" of the implementation guide.
    ──────────────────────────────────────────────────────────────────────── */
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxL3U1yETSvVLnOvS6Ma6DPizihw7J4rhWH-OdxvPq8iAqtVmCRW9-CqBITyGri1NxdzA/exec",
-  DEMO_MODE: false   // true = runs on sample data only, no network calls. Set false once wired up.
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxL3U1yETSvVLnOvS6Ma6DPizihw7J4rhWH-OdxvPq8iAqtVmCRW9-CqBITyGri1NxdzA/exec"
 };
-
 
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
 
 const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
-const MANAGERS = ['Marta B.','Mireia M.','Paula Z.','Josep N.','Nerea M.','Nuria C.','Paloma B.','Laia S.','Mar S.'];
 
-/* In-memory demo store (resets on reload) — mirrors the shape the real API returns.
-   Single flat table: one row = one audit event, independent of other rows
-   for the same project. */
 let DB = { audits: [] };
 let expandedId = null;
 let pastExpanded = false; // whether the single "Auditories anteriors" block is expanded
@@ -395,58 +393,12 @@ function currentYYYYMM(){
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
 
-function seedDemoData(){
-  const rows = [
-    ['2026-02','Marta','M.Güell','ONR-P1','ONR','5/7','2026-02-10','Not needed','5a factura Periode 1'],
-    ['2026-03','Mar','NEU, Gergely','SCALER','H2020 - ERC - STG','1/4','2026-03-05','Yes','AUDIT FS1 (primer periode)'],
-    ['2026-09','Paula','Bustos, Maria Paula','ClimateAdapt','HEUROPE-ERC-CoG','1/2','2026-09-05','Yes',''],
-    ['2026-09','Josep N.','Marco Madella','ROOTS','HEUROPE-ERC-CoG','1/2','','Yes',''],
-    ['2026-09','Nerea','Conte, Bruno','SPEED','HEu-MSCA-PF','1/1','','Not needed','Recordar Final Report 11/2026'],
-    ['2026-10','Marta','M.Güell','SCRIBE','HE-ERC-CoG','1/2','','Yes','AUDITORIA INTERNA (01/05/2024-31/10/26) 30 M'],
-    ['2026-10','Mar','NEU, Gergely','SCALER','H2020 - ERC - STG','4/4','','Yes','AUDIT FS3 + FS4 (ja passada FS1+FS2)'],
-    ['2026-09','Laia','Gonzalez Ballester, MA','EarCanals3D','','2/3','','Not needed','Preparar accounting del segon any i parlar amb la Karen per demanar 3rd year payment'],
-    ['2026-09','Paloma','Prieto, Pilar','ANTRAG','Aj. Internacional','4/4','','Not needed',''],
-    ['2026-08','Josep N.','REVILLA, Melanie','WEB DATA OPP','H2020 - ERC - StG','3/4','','Yes',''],
-    ['2027-02','Josep N.','REVILLA, Melanie','WEB DATA OPP','H2020 - ERC - StG','4/4','','Yes',''],
-  ];
-  DB.audits = rows.map((r,i)=>({
-    id:'demo-'+i, audit_month:r[0], manager:r[1], manager_email:r[1].toLowerCase().replace(/[^a-z]/g,'.')+'@upf.edu', name_pi:r[2], acronym:r[3], programme:r[4],
-    cs:r[5], sent_date:r[6], audit:r[7], comments:r[8], reminder_date:'', reminder_sent:'', last_modified:new Date().toISOString()
-  }));
-}
-
 /* ── API layer ─────────────────────────────────────────────────────────── */
 async function apiGet(){
-  if (CONFIG.DEMO_MODE) return DB;
   const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?id_token=' + encodeURIComponent(ID_TOKEN));
   return res.json();
 }
 async function apiPost(action, data){
-  if (CONFIG.DEMO_MODE){
-    if (action==='addAudit'){
-      const id='demo-'+Date.now();
-      DB.audits.push({ id, ...data, last_modified:new Date().toISOString() });
-      return {id};
-    }
-    if (action==='appendComment'){
-      const row = DB.audits.find(a=>a.id===data.id);
-      if (row){
-        const stamp = new Date().toLocaleString('ca-ES');
-        const line = `[${stamp}] tu@upf.edu: ${data.text}`;
-        row.comments = row.comments ? row.comments + '\n' + line : line;
-      }
-      return {updated:true};
-    }
-    if (action==='setReminder'){
-      const row = DB.audits.find(a=>a.id===data.id);
-      if (row){
-        row.reminder_date = data.reminder_date || '';
-        row.reminder_sent = '';
-        if (data.manager_email) row.manager_email = data.manager_email;
-      }
-      return {updated:true};
-    }
-  }
   const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
     method:'POST',
     headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // avoids CORS preflight against Apps Script
@@ -456,14 +408,22 @@ async function apiPost(action, data){
 }
 
 /* ── Rendering ─────────────────────────────────────────────────────────── */
+// Manager names are never hardcoded — the filter dropdown and the "new audit"
+// form's suggestions are both rebuilt from whatever managers already exist in
+// the data every time it refreshes, so a brand-new manager just needs to be
+// typed once and immediately becomes a future suggestion. No code change,
+// no redeploy, ever, when the roster changes.
 function populateManagerControls(){
+  const names = [...new Set(DB.audits.map(a=>a.manager).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+
   const sel = document.getElementById('filterManager');
-  const fsel = document.getElementById('f_manager');
-  MANAGERS.forEach(m=>{
-    sel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
-    fsel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
-  });
-  fsel.addEventListener('change', suggestManagerEmailFromHistory);
+  const previousFilterValue = sel.value;
+  sel.innerHTML = '<option value="">Totes les gestores</option>';
+  names.forEach(m=> sel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`));
+  if (names.includes(previousFilterValue)) sel.value = previousFilterValue;
+
+  const datalist = document.getElementById('managerSuggestions');
+  datalist.innerHTML = names.map(m=>`<option value="${m}">`).join('');
 }
 
 // Convenience only — looks up the most recent existing row for this manager
@@ -518,6 +478,12 @@ function renderRow(a){
   const cls = a.audit === 'Yes' ? 'Yes' : 'NotNeeded';
   const hasComments = a.comments && a.comments.trim().length > 0;
   const hasReminder = a.reminder_date && !a.reminder_sent;
+  const hasEmail = a.manager_email && a.manager_email.trim().length > 0;
+
+  let reminderIcon = '';
+  if (a.reminder_sent) reminderIcon = ' ✅';
+  else if (hasReminder) reminderIcon = ' 🔔';
+
   let html = `<tr class="audit-row" data-id="${a.id}">
     <td><span class="manager-pill">${a.manager}</span></td>
     <td class="name-cell"><b>${a.acronym || '—'}</b><span>${a.name_pi}</span></td>
@@ -525,14 +491,15 @@ function renderRow(a){
     <td>${formatCS(a.cs)}</td>
     <td>${formatDate(a.sent_date)}</td>
     <td><span class="badge ${cls}">${a.audit}</span></td>
-    <td class="comment-count">${hasComments ? '💬' : ''}${hasReminder ? ' 🔔' : ''}</td>
+    <td class="comment-count">${hasComments ? '💬' : ''}${reminderIcon}</td>
   </tr>`;
+
   if (expandedId === a.id){
     const comments = a.comments;
     const reminderInputVal = toDateInputValue(a.reminder_date);
     let reminderStatus = '';
     if (a.reminder_sent) reminderStatus = `Enviat el ${formatDate(a.reminder_sent)}`;
-    else if (a.reminder_date) reminderStatus = `Programat per ${formatDate(a.reminder_date)} (a ${a.manager_email || 'sense correu'})`;
+    else if (a.reminder_date) reminderStatus = `Programat per ${formatDate(a.reminder_date)}`;
 
     html += `<tr class="detail-row"><td colspan="7"><div class="detail-inner">
       <div class="comment-log ${hasComments?'':'empty'}">${hasComments ? comments : 'Encara no hi ha comentaris.'}</div>
@@ -542,14 +509,17 @@ function renderRow(a){
       </div>
 
       <div class="reminder-block">
-        <label>🕐 Recordatori per correu</label>
-        <div class="add-comment">
-          <input type="email" id="reminderEmail-${a.id}" placeholder="correu@upf.edu" value="${a.manager_email || ''}" style="flex:1.4;">
-          <input type="date" id="reminderDate-${a.id}" value="${reminderInputVal}">
-          <button class="btn btn-ghost" onclick="saveReminder('${a.id}')">Desa recordatori</button>
-          ${a.reminder_date && !a.reminder_sent ? `<button class="btn-link" onclick="clearReminder('${a.id}')">Elimina</button>` : ''}
-        </div>
-        ${reminderStatus ? `<div class="reminder-status">${reminderStatus}</div>` : ''}
+        <label>🕐 Recordatori per correu — s'enviarà a: ${hasEmail ? `<b>${a.manager_email}</b>` : '<span class="reminder-warning">cap correu registrat</span>'}</label>
+        ${hasEmail ? `
+          <div class="add-comment">
+            <input type="date" id="reminderDate-${a.id}" value="${reminderInputVal}">
+            <button class="btn btn-ghost" onclick="saveReminder('${a.id}')">Desa recordatori</button>
+            ${a.reminder_date && !a.reminder_sent ? `<button class="btn-link" onclick="clearReminder('${a.id}')">Elimina</button>` : ''}
+          </div>
+          ${reminderStatus ? `<div class="reminder-status">${reminderStatus}</div>` : ''}
+        ` : `
+          <div class="reminder-warning-box">Aquesta auditoria no té cap correu de gestora registrat, així que no es pot programar un recordatori. Edita el correu directament a la fulla de càlcul per activar-ho.</div>
+        `}
       </div>
     </div></td></tr>`;
   }
@@ -714,10 +684,8 @@ async function submitComment(auditId){
 
 async function saveReminder(auditId){
   const dateVal = document.getElementById('reminderDate-'+auditId).value;
-  const emailVal = document.getElementById('reminderEmail-'+auditId).value.trim();
   if (!dateVal){ showToast('Selecciona una data primer'); return; }
-  if (!emailVal){ showToast('Cal un correu per enviar el recordatori'); return; }
-  await apiPost('setReminder', { id: auditId, reminder_date: dateVal, manager_email: emailVal });
+  await apiPost('setReminder', { id: auditId, reminder_date: dateVal });
   await refresh();
   showToast('Recordatori programat');
 }
@@ -823,15 +791,14 @@ function setSyncStatus(state, detail){
 async function refresh(userTriggered){
   setSyncStatus('syncing');
   try {
-    if (!CONFIG.DEMO_MODE){
-      const data = await apiGet();
-      if (data.error){
-        console.error('Sync rejected by server:', data.error); // ← check this in dev tools (F12) console
-        setSyncStatus('error', data.error);
-        return;
-      }
-      DB = data;
+    const data = await apiGet();
+    if (data.error){
+      console.error('Sync rejected by server:', data.error); // ← check this in dev tools (F12) console
+      setSyncStatus('error', data.error);
+      return;
     }
+    DB = data;
+    populateManagerControls(); // rebuilt from live data every refresh, so new managers appear automatically
     renderMonthNav();
     renderTable();
     setSyncStatus('ok');
@@ -864,21 +831,10 @@ function handleCredentialResponse(response){
 
 /* ── Init (runs once sign-in succeeds) ────────────────────────────────── */
 function startApp(){
-  populateManagerControls();
-  if (CONFIG.DEMO_MODE) seedDemoData();
+  document.getElementById('f_manager').addEventListener('change', suggestManagerEmailFromHistory);
   refresh().then(scrollToToday);
 
   setInterval(()=>refresh(), POLL_MS);               // keeps other PMs' changes showing up automatically
   window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
-}
-
-/* ── Demo-mode bootstrap ──────────────────────────────────────────────────
-   DEMO_MODE never needs a real Google Sign-In setup — it skips the login
-   screen entirely so the UI can be previewed before OAUTH_CLIENT_ID exists.
-   This runs immediately on page load, before any Sign-In button is touched. */
-if (CONFIG.DEMO_MODE){
-  document.getElementById("login").style.display = "none";
-  document.getElementById("private").style.display = "block";
-  startApp();
 }
 </script>
