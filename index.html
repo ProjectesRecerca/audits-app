@@ -111,7 +111,10 @@
   .field-hint{ font-size:11.5px; color:var(--muted); margin-top:4px; }
 
   .reminder-block{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
-  .reminder-block label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  .reminder-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .reminder-row .reminder-label{ flex:1; min-width:200px; font-size:12px; font-weight:600; color:var(--muted); }
+  .reminder-row input[type=date]{ flex-shrink:0; }
+  .reminder-row button{ flex-shrink:0; }
   .reminder-status{ font-size:11.5px; color:var(--navy); margin-top:6px; }
   .reminder-warning{ color:var(--brand-red-ink); font-weight:600; }
   .reminder-warning-box{ font-size:12.5px; color:var(--muted); background:#FAFAF8; border:1px dashed var(--line); border-radius:8px; padding:10px 12px; }
@@ -398,12 +401,16 @@ async function apiGet(){
   const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?id_token=' + encodeURIComponent(ID_TOKEN));
   return res.json();
 }
+// Writes go through GET (URL parameters), not POST — Apps Script Web Apps
+// have a known cross-origin CORS limitation specifically on POST requests,
+// caused by how Google's redirect chain handles them; GET doesn't hit it,
+// which is exactly why reads have been working while writes weren't.
 async function apiPost(action, data){
-  const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-    method:'POST',
-    headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // avoids CORS preflight against Apps Script
-    body: JSON.stringify({ id_token: ID_TOKEN, action, data })
-  });
+  const url = CONFIG.APPS_SCRIPT_URL
+    + '?id_token=' + encodeURIComponent(ID_TOKEN)
+    + '&action=' + encodeURIComponent(action)
+    + '&data=' + encodeURIComponent(JSON.stringify(data));
+  const res = await fetch(url);
   return res.json();
 }
 
@@ -509,16 +516,16 @@ function renderRow(a){
       </div>
 
       <div class="reminder-block">
-        <label>🕐 Recordatori per correu — s'enviarà a: ${hasEmail ? `<b>${a.manager_email}</b>` : '<span class="reminder-warning">cap correu registrat</span>'}</label>
         ${hasEmail ? `
-          <div class="add-comment">
+          <div class="reminder-row">
+            <span class="reminder-label">🕐 Recordatori per correu — s'enviarà a: <b>${a.manager_email}</b></span>
             <input type="date" id="reminderDate-${a.id}" value="${reminderInputVal}">
             <button class="btn btn-ghost" onclick="saveReminder('${a.id}')">Desa recordatori</button>
             ${a.reminder_date && !a.reminder_sent ? `<button class="btn-link" onclick="clearReminder('${a.id}')">Elimina</button>` : ''}
           </div>
           ${reminderStatus ? `<div class="reminder-status">${reminderStatus}</div>` : ''}
         ` : `
-          <div class="reminder-warning-box">Aquesta auditoria no té cap correu de gestora registrat, així que no es pot programar un recordatori. Edita el correu directament a la fulla de càlcul per activar-ho.</div>
+          <div class="reminder-warning-box">🕐 Recordatori per correu — <span class="reminder-warning">cap correu registrat</span>. Edita el correu directament a la fulla de càlcul per activar-ho.</div>
         `}
       </div>
     </div></td></tr>`;
@@ -673,11 +680,24 @@ function renderMonthNav(){
   });
 }
 
+// Every write goes through this — if the backend rejected the request (auth
+// expired, row not found, etc.) this surfaces it instead of the app silently
+// pretending it worked. Returns true if the write succeeded.
+function checkWriteResult(result){
+  if (result && result.error){
+    console.error('Write rejected by server:', result.error);
+    showToast('Error: ' + result.error);
+    return false;
+  }
+  return true;
+}
+
 async function submitComment(auditId){
   const input = document.getElementById('newComment-'+auditId);
   const text = input.value.trim();
   if (!text) return;
-  await apiPost('appendComment', { id: auditId, text });
+  const result = await apiPost('appendComment', { id: auditId, text });
+  if (!checkWriteResult(result)) return;
   await refresh();
   showToast('Comentari desat');
 }
@@ -685,13 +705,15 @@ async function submitComment(auditId){
 async function saveReminder(auditId){
   const dateVal = document.getElementById('reminderDate-'+auditId).value;
   if (!dateVal){ showToast('Selecciona una data primer'); return; }
-  await apiPost('setReminder', { id: auditId, reminder_date: dateVal });
+  const result = await apiPost('setReminder', { id: auditId, reminder_date: dateVal });
+  if (!checkWriteResult(result)) return;
   await refresh();
   showToast('Recordatori programat');
 }
 
 async function clearReminder(auditId){
-  await apiPost('setReminder', { id: auditId, reminder_date: '' });
+  const result = await apiPost('setReminder', { id: auditId, reminder_date: '' });
+  if (!checkWriteResult(result)) return;
   await refresh();
   showToast('Recordatori eliminat');
 }
@@ -729,6 +751,10 @@ async function saveAudit(){
 
   const initialComment = document.getElementById('f_comment').value.trim();
   const result = await apiPost('addAudit', data);
+  if (!checkWriteResult(result)){
+    btn.disabled = false; btn.textContent = 'Guardar';
+    return;
+  }
   if (initialComment && result.id){
     await apiPost('appendComment', { id: result.id, text: initialComment });
   }
@@ -832,7 +858,7 @@ function handleCredentialResponse(response){
 /* ── Init (runs once sign-in succeeds) ────────────────────────────────── */
 function startApp(){
   document.getElementById('f_manager').addEventListener('change', suggestManagerEmailFromHistory);
-  refresh().then(scrollToToday);
+  refresh();
 
   setInterval(()=>refresh(), POLL_MS);               // keeps other PMs' changes showing up automatically
   window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
