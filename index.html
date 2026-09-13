@@ -387,7 +387,6 @@ const CONFIG = {
 };
 
 
-
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
  
 const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
@@ -402,17 +401,34 @@ function currentYYYYMM(){
 }
  
 /* ── API layer ─────────────────────────────────────────────────────────── */
-// cache: 'no-store' on both calls below is deliberate, not decorative.
-// Apps Script Web Apps serve every response via a 302 redirect to a
-// script.googleusercontent.com/macros/echo?...&lib=<deployment-version> URL.
-// If the browser caches that redirect and a new deployment version is
-// published afterwards (while the tab stays open), a later request can
-// replay the *cached* redirect straight to an old, now-invalid `lib=`
-// value — which 404s, even though the actual doGet execution behind it
-// would have succeeded. no-store forces a fresh redirect on every call.
+// cache: 'no-store' is deliberate: Apps Script Web Apps serve every response
+// via a redirect to script.googleusercontent.com/macros/echo?...&lib=..., and
+// a cached redirect can otherwise replay a stale response after a redeploy.
+//
+// The retry-once wrapper below is a separate, additional safety net: Apps
+// Script's serving layer has occasional, undocumented intermittent failures
+// (a 404 or an HTML error page instead of JSON) even with fresh, uncached
+// requests — a known rough edge of the platform, not something traceable to
+// our own code. One silent retry after a short pause absorbs most of these
+// without the user ever seeing a sync error for something that was purely
+// transient.
+async function fetchWithRetry_(url){
+  for (let attempt = 0; attempt < 2; attempt++){
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      return await res.json(); // throws if the body isn't valid JSON (e.g. an HTML error page)
+    } catch (err){
+      if (attempt === 0){
+        await new Promise(r => setTimeout(r, 800));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+ 
 async function apiGet(){
-  const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?id_token=' + encodeURIComponent(ID_TOKEN), { cache: 'no-store' });
-  return res.json();
+  return fetchWithRetry_(CONFIG.APPS_SCRIPT_URL + '?id_token=' + encodeURIComponent(ID_TOKEN));
 }
 // Writes go through GET (URL parameters), not POST — Apps Script Web Apps
 // have a known cross-origin CORS limitation specifically on POST requests,
@@ -423,8 +439,7 @@ async function apiPost(action, data){
     + '?id_token=' + encodeURIComponent(ID_TOKEN)
     + '&action=' + encodeURIComponent(action)
     + '&data=' + encodeURIComponent(JSON.stringify(data));
-  const res = await fetch(url, { cache: 'no-store' });
-  return res.json();
+  return fetchWithRetry_(url);
 }
  
 /* ── Rendering ─────────────────────────────────────────────────────────── */
@@ -889,4 +904,5 @@ function startApp(){
   window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
 }
 </script>
+ 
  
