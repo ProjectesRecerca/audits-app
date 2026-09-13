@@ -386,6 +386,7 @@ const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxpctpy2J2t99Mc-G_dcFhgpcTTbSiFty0MzhSAKaJLq1hzyht1V6mW1X1vnKqbWgJ8kg/exec"
 };
 
+
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
  
 const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
@@ -400,8 +401,16 @@ function currentYYYYMM(){
 }
  
 /* ── API layer ─────────────────────────────────────────────────────────── */
+// cache: 'no-store' on both calls below is deliberate, not decorative.
+// Apps Script Web Apps serve every response via a 302 redirect to a
+// script.googleusercontent.com/macros/echo?...&lib=<deployment-version> URL.
+// If the browser caches that redirect and a new deployment version is
+// published afterwards (while the tab stays open), a later request can
+// replay the *cached* redirect straight to an old, now-invalid `lib=`
+// value — which 404s, even though the actual doGet execution behind it
+// would have succeeded. no-store forces a fresh redirect on every call.
 async function apiGet(){
-  const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?id_token=' + encodeURIComponent(ID_TOKEN));
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?id_token=' + encodeURIComponent(ID_TOKEN), { cache: 'no-store' });
   return res.json();
 }
 // Writes go through GET (URL parameters), not POST — Apps Script Web Apps
@@ -413,7 +422,7 @@ async function apiPost(action, data){
     + '?id_token=' + encodeURIComponent(ID_TOKEN)
     + '&action=' + encodeURIComponent(action)
     + '&data=' + encodeURIComponent(JSON.stringify(data));
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' });
   return res.json();
 }
  
