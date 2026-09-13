@@ -2,6 +2,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+
 <style>
   :root{
     --bg:#F7F8FA;
@@ -27,9 +28,9 @@
     font-size:14px;
   }
   h1,h2,h3{font-family:'Inter',system-ui,sans-serif; margin:0; color:var(--ink); font-weight:800; letter-spacing:-0.01em;}
-
+ 
   .app{ max-width:1200px; margin:0 auto; padding:28px 24px 60px; }
-
+ 
   /* ── Login gate ────────────────────────────────────────── */
   #login{
     min-height:100vh; display:flex; align-items:center; justify-content:center;
@@ -42,7 +43,7 @@
   #login .logo-mark{ margin:0 auto 16px; }
   #login h2{ font-size:19px; margin-bottom:6px; }
   #login p{ color:var(--muted); font-size:13px; margin:0 0 22px; }
-
+ 
   /* ── Top bar ───────────────────────────────────────────── */
   .topbar{
     display:flex; align-items:flex-end; justify-content:space-between;
@@ -73,12 +74,12 @@
   .btn-primary:disabled{ opacity:.6; cursor:default; }
   .btn-ghost{ background:transparent; color:var(--navy); border:1px solid var(--line); }
   .btn-ghost:hover{ background:#EFF1EE; }
-
+ 
   /* ── Sync status ───────────────────────────────────────── */
   .sync-status{ font-size:11.5px; color:var(--muted); margin:0 0 18px 2px; display:flex; align-items:center; gap:6px; }
   .sync-status .dot{ width:6px; height:6px; border-radius:50%; background:#3FA66B; display:inline-block; }
   .sync-status.stale .dot{ background:#C4762A; }
-
+ 
   /* ── Table ─────────────────────────────────────────────── */
   .month-group{ margin-bottom:18px; }
   .month-title{
@@ -105,11 +106,11 @@
   .name-cell b{ display:block; }
   .name-cell span{ color:var(--muted); font-size:12px; }
   .comment-count{ color:var(--muted); font-size:12px; }
-
+ 
   .detail-row td{ background:#FAFAF8; padding:0; }
   .detail-inner{ padding:14px 18px 18px; }
   .field-hint{ font-size:11.5px; color:var(--muted); margin-top:4px; }
-
+ 
   .reminder-block{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
   .reminder-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .reminder-row .reminder-label{ flex:1; min-width:200px; font-size:12px; font-weight:600; color:var(--muted); }
@@ -122,9 +123,9 @@
   .comment-log.empty{ color:var(--muted); font-style:italic; }
   .add-comment{ display:flex; gap:8px; }
   .add-comment input{ flex:1; }
-
+ 
   .empty{ color:var(--muted); padding:30px; text-align:center; font-size:13.5px; }
-
+ 
   .month-nav{ padding:2px 2px 16px; }
   .bubble-row{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:8px; }
   .bubble-row:last-child{ margin-bottom:0; }
@@ -139,7 +140,7 @@
   .month-bubble{ font-size:12px; padding:6px 13px; }
   .month-bubble:hover{ background:#EFF1EE; }
   .month-bubble.current{ border-color:var(--brand-red); color:var(--brand-red-ink); background:#FDEEEF; font-weight:800; }
-
+ 
   .month-collapsed{
     display:flex; align-items:center; gap:12px; padding:10px 14px; margin-bottom:10px;
     background:var(--surface); border:1px solid var(--line); border-radius:8px;
@@ -149,7 +150,7 @@
   .month-collapsed .mc-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .month-collapsed .mc-count{ font-size:12px; color:var(--muted); flex:1; }
   .month-collapsed .mc-toggle{ font-size:12px; font-weight:600; color:var(--navy); }
-
+ 
   .past-block-header{
     display:flex; align-items:center; justify-content:space-between; padding:8px 14px; margin-bottom:10px;
     background:#EEF1F6; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
@@ -161,20 +162,20 @@
     background:none; border:none; font-size:11px; font-weight:600; color:var(--navy);
     cursor:pointer; text-decoration:underline; padding:0; margin-left:8px;
   }
-
+ 
   .today-divider{
     display:flex; align-items:center; gap:10px; padding:6px 12px; margin:2px 0;
     font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-red-ink);
   }
   .today-divider::before, .today-divider::after{ content:''; flex:1; height:1px; background:var(--brand-red); opacity:.4; }
-
+ 
   /* ── Lateral drawer ────────────────────────────────────── */
   .overlay{
     position:fixed; inset:0; background:rgba(22,30,45,.35);
     opacity:0; pointer-events:none; transition:opacity .18s ease; z-index:20;
   }
   .overlay.open{ opacity:1; pointer-events:auto; }
-
+ 
   .drawer{
     position:fixed; top:0; right:0; height:100%; width:420px; max-width:92vw;
     background:var(--surface); box-shadow:-8px 0 24px rgba(20,30,45,.15);
@@ -192,14 +193,14 @@
   .field-row{ display:flex; gap:10px; }
   .field-row .field{ flex:1; }
   .drawer-foot{ padding:16px 22px; border-top:1px solid var(--line); display:flex; gap:10px; justify-content:flex-end; }
-
+ 
   .toast{
     position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
     background:var(--navy-ink); color:#fff; padding:11px 20px; border-radius:8px; font-size:13px;
     opacity:0; pointer-events:none; transition:all .2s ease; z-index:30;
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-
+ 
   /* ── AI chat module (placeholder — not wired up yet) ─────── */
   .chat-fab{
     position:fixed; bottom:24px; right:24px; width:52px; height:52px; border-radius:50%;
@@ -209,7 +210,7 @@
     transition:right .22s ease, background .1s ease;
   }
   .chat-fab:hover{ background:var(--navy-ink); }
-
+ 
   .top-fab{
     position:fixed; bottom:24px; left:50%; width:48px; height:48px; border-radius:50%;
     background:var(--surface); color:var(--navy); border:1px solid var(--line); font-size:18px; cursor:pointer;
@@ -240,6 +241,7 @@
   .chat-input-row input{ flex:1; }
   .chat-input-row input:disabled{ background:#F3F4F6; color:var(--muted); }
 </style>
+ 
 
 <!-- ── LOGIN GATE ──────────────────────────────────────────────────────────
      Fill in your OAuth client_id below, and your institutional domain in
@@ -385,18 +387,18 @@ const CONFIG = {
 };
 
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
-
+ 
 const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
-
+ 
 let DB = { audits: [] };
 let expandedId = null;
 let pastExpanded = false; // whether the single "Auditories anteriors" block is expanded
-
+ 
 function currentYYYYMM(){
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
-
+ 
 /* ── API layer ─────────────────────────────────────────────────────────── */
 async function apiGet(){
   const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?id_token=' + encodeURIComponent(ID_TOKEN));
@@ -414,7 +416,7 @@ async function apiPost(action, data){
   const res = await fetch(url);
   return res.json();
 }
-
+ 
 /* ── Rendering ─────────────────────────────────────────────────────────── */
 // Manager names are never hardcoded — the filter dropdown and the "new audit"
 // form's suggestions are both rebuilt from whatever managers already exist in
@@ -423,17 +425,17 @@ async function apiPost(action, data){
 // no redeploy, ever, when the roster changes.
 function populateManagerControls(){
   const names = [...new Set(DB.audits.map(a=>a.manager).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-
+ 
   const sel = document.getElementById('filterManager');
   const previousFilterValue = sel.value;
   sel.innerHTML = '<option value="">Totes les gestores</option>';
   names.forEach(m=> sel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`));
   if (names.includes(previousFilterValue)) sel.value = previousFilterValue;
-
+ 
   const datalist = document.getElementById('managerSuggestions');
   datalist.innerHTML = names.map(m=>`<option value="${m}">`).join('');
 }
-
+ 
 // Convenience only — looks up the most recent existing row for this manager
 // and suggests that email, but never overwrites something already typed, and
 // is always editable. The email itself only ever lives in the Sheet's rows,
@@ -446,33 +448,33 @@ function suggestManagerEmailFromHistory(){
   const match = [...DB.audits].reverse().find(a=>a.manager===name && a.manager_email);
   if (match) emailField.value = match.manager_email;
 }
-
+ 
 function monthLabel(yyyymm){
   if (!yyyymm) return 'Sense mes';
   const [y,m] = yyyymm.split('-');
   return `${MONTHS[parseInt(m,10)-1]} ${y}`;
 }
-
+ 
 function formatDate(s){
   if(!s) return '—';
   const d = new Date(s);
   if (isNaN(d)) return s;
   return d.toLocaleDateString('ca-ES', { day:'2-digit', month:'short', year:'numeric' });
 }
-
+ 
 function getFilters(){
   return {
     manager: document.getElementById('filterManager').value,
     q: document.getElementById('searchBox').value.trim().toLowerCase()
   };
 }
-
+ 
 function toDateInputValue(v){
   if (!v) return '';
   if (typeof v === 'string' && v.length >= 10) return v.slice(0,10); // handles both "YYYY-MM-DD" and ISO datetime strings
   return '';
 }
-
+ 
 function formatCS(v){
   if (!v) return '—';
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)){
@@ -481,17 +483,17 @@ function formatCS(v){
   }
   return v;
 }
-
+ 
 function renderRow(a){
   const cls = a.audit === 'Yes' ? 'Yes' : 'NotNeeded';
   const hasComments = a.comments && a.comments.trim().length > 0;
   const hasReminder = a.reminder_date && !a.reminder_sent;
   const hasEmail = a.manager_email && a.manager_email.trim().length > 0;
-
+ 
   let reminderIcon = '';
   if (a.reminder_sent) reminderIcon = ' ✅';
   else if (hasReminder) reminderIcon = ' 🔔';
-
+ 
   let html = `<tr class="audit-row" data-id="${a.id}">
     <td><span class="manager-pill">${a.manager}</span></td>
     <td class="name-cell"><b>${a.acronym || '—'}</b><span>${a.name_pi}</span></td>
@@ -501,21 +503,21 @@ function renderRow(a){
     <td><span class="badge ${cls}">${a.audit}</span></td>
     <td class="comment-count">${hasComments ? '💬' : ''}${reminderIcon}</td>
   </tr>`;
-
-  if (expandedId === a.id){
+ 
+  if (expandedId === String(a.id)){
     const comments = a.comments;
     const reminderInputVal = toDateInputValue(a.reminder_date);
     let reminderStatus = '';
     if (a.reminder_sent) reminderStatus = `Enviat el ${formatDate(a.reminder_sent)}`;
     else if (a.reminder_date) reminderStatus = `Programat per ${formatDate(a.reminder_date)}`;
-
+ 
     html += `<tr class="detail-row"><td colspan="7"><div class="detail-inner">
       <div class="comment-log ${hasComments?'':'empty'}">${hasComments ? comments : 'Encara no hi ha comentaris.'}</div>
       <div class="add-comment">
         <input type="text" placeholder="Afegir un comentari…" id="newComment-${a.id}">
         <button class="btn btn-ghost" onclick="submitComment('${a.id}')">Afegir</button>
       </div>
-
+ 
       <div class="reminder-block">
         ${hasEmail ? `
           <div class="reminder-row">
@@ -533,11 +535,11 @@ function renderRow(a){
   }
   return html;
 }
-
+ 
 function todayDividerHTML(){
   return `<div class="today-divider" id="todayMarker">Aquest mes — ${monthLabel(currentYYYYMM())}</div>`;
 }
-
+ 
 function pastBlockCollapsedHTML(count, monthCount){
   return `<div class="month-collapsed" id="pastAuditsBlock" onclick="togglePastAudits()">
     <span class="mc-label">Auditories anteriors</span>
@@ -545,7 +547,7 @@ function pastBlockCollapsedHTML(count, monthCount){
     <span class="mc-toggle">Mostra ▾</span>
   </div>`;
 }
-
+ 
 function renderTable(){
   const { manager, q } = getFilters();
   let rows = [...DB.audits];
@@ -553,29 +555,29 @@ function renderTable(){
   if (q) rows = rows.filter(a =>
     (a.name_pi||'').toLowerCase().includes(q) ||
     (a.acronym||'').toLowerCase().includes(q));
-
+ 
   // Chronological order throughout, by audit_month ("YYYY-MM" sorts correctly as text).
   // Nothing is cut off by date — past rows at the top, future rows below.
   rows.sort((a,b)=> (a.audit_month||'').localeCompare(b.audit_month||''));
-
+ 
   const container = document.getElementById('tableContainer');
   if (rows.length===0){
     container.innerHTML = `<div class="empty">No hi ha auditories que coincideixin amb aquest filtre.</div>`;
     return;
   }
-
+ 
   // Group into ordered buckets by month (rows are already sorted, so insertion order = chronological order).
   const groups = new Map();
   rows.forEach(a=>{
     if (!groups.has(a.audit_month)) groups.set(a.audit_month, []);
     groups.get(a.audit_month).push(a);
   });
-
+ 
   const now = currentYYYYMM();
   const pastEntries = [...groups.entries()].filter(([m])=> m < now);
   const presentFutureEntries = [...groups.entries()].filter(([m])=> m >= now);
   let html = '';
-
+ 
   if (pastEntries.length > 0){
     const totalPastCount = pastEntries.reduce((sum,[,items])=> sum + items.length, 0);
     if (!pastExpanded){
@@ -598,7 +600,7 @@ function renderTable(){
       });
     }
   }
-
+ 
   presentFutureEntries.forEach(([monthKey, items], idx)=>{
     if (idx === 0) html += todayDividerHTML();
     html += `<div class="month-group" id="group-${monthKey}">
@@ -609,9 +611,9 @@ function renderTable(){
     items.forEach(a=>{ html += renderRow(a); });
     html += `</tbody></table></div>`;
   });
-
+ 
   container.innerHTML = html;
-
+ 
   document.querySelectorAll('.audit-row').forEach(row=>{
     row.addEventListener('click', ()=>{
       const id = row.dataset.id;
@@ -620,37 +622,37 @@ function renderTable(){
     });
   });
 }
-
+ 
 function togglePastAudits(){
   pastExpanded = !pastExpanded;
   renderTable();
 }
-
+ 
 function scrollToToday(){
   const marker = document.getElementById('todayMarker');
   if (marker) marker.scrollIntoView({ behavior:'smooth', block:'start' });
 }
-
+ 
 let selectedNavYear = null; // which year's bubble is currently active in the nav strip
-
+ 
 function renderMonthNav(){
   const months = [...new Set(DB.audits.map(a=>a.audit_month).filter(Boolean))].sort();
   const years = [...new Set(months.map(m=>m.slice(0,4)))].sort();
   const now = currentYYYYMM();
   const thisYear = String(new Date().getFullYear());
-
+ 
   const container = document.getElementById('monthNav');
   if (years.length === 0){ container.innerHTML = ''; return; }
-
+ 
   if (selectedNavYear === null || !years.includes(selectedNavYear)){
     selectedNavYear = years.includes(thisYear) ? thisYear : years[years.length-1];
   }
-
+ 
   container.innerHTML = `
     <div class="bubble-row" id="yearBubbles"></div>
     <div class="bubble-row" id="monthBubbles"></div>
   `;
-
+ 
   const yearRow = document.getElementById('yearBubbles');
   years.forEach(y=>{
     const cls = y === selectedNavYear ? 'bubble year-bubble active' : 'bubble year-bubble';
@@ -662,7 +664,7 @@ function renderMonthNav(){
       renderMonthNav();
     });
   });
-
+ 
   const monthRow = document.getElementById('monthBubbles');
   const monthsInYear = months.filter(m=>m.startsWith(selectedNavYear));
   monthsInYear.forEach(m=>{
@@ -680,7 +682,7 @@ function renderMonthNav(){
     });
   });
 }
-
+ 
 // Every write goes through this — if the backend rejected the request (auth
 // expired, row not found, etc.) this surfaces it instead of the app silently
 // pretending it worked. Returns true if the write succeeded.
@@ -692,7 +694,7 @@ function checkWriteResult(result){
   }
   return true;
 }
-
+ 
 async function submitComment(auditId){
   const input = document.getElementById('newComment-'+auditId);
   const text = input.value.trim();
@@ -702,7 +704,7 @@ async function submitComment(auditId){
   await refresh();
   showToast('Comentari desat');
 }
-
+ 
 async function saveReminder(auditId){
   const dateVal = document.getElementById('reminderDate-'+auditId).value;
   if (!dateVal){ showToast('Selecciona una data primer'); return; }
@@ -711,14 +713,14 @@ async function saveReminder(auditId){
   await refresh();
   showToast('Recordatori programat');
 }
-
+ 
 async function clearReminder(auditId){
   const result = await apiPost('setReminder', { id: auditId, reminder_date: '' });
   if (!checkWriteResult(result)) return;
   await refresh();
   showToast('Recordatori eliminat');
 }
-
+ 
 /* ── Drawer ────────────────────────────────────────────────────────────── */
 function openDrawer(){
   document.getElementById('drawer').classList.add('open');
@@ -731,7 +733,7 @@ function closeDrawer(){
   ['f_month','f_namepi','f_acronym','f_programme','f_cs','f_sent','f_comment','f_manager_email'].forEach(id=>document.getElementById(id).value='');
   shiftChatWidget(false);
 }
-
+ 
 // Slides the chat button/panel left, clear of the drawer, whenever it's open —
 // measured against the drawer's actual rendered width so this still works on
 // narrow screens where the drawer takes up nearly the full viewport.
@@ -741,14 +743,14 @@ function shiftChatWidget(shifted){
   document.getElementById('chatFab').style.right = offset;
   document.getElementById('chatPanel').style.right = offset;
 }
-
+ 
 async function saveAudit(){
   const audit_month = document.getElementById('f_month').value; // "YYYY-MM"
   if (!audit_month){ showToast("Cal indicar el mes d'auditoria"); return; }
-
+ 
   const btn = document.getElementById('btnSave');
   btn.disabled = true; btn.textContent = 'Desant…';
-
+ 
   const data = {
     audit_month: audit_month,
     manager: document.getElementById('f_manager').value,
@@ -761,7 +763,7 @@ async function saveAudit(){
     audit: document.getElementById('f_audit').value,
     comments: ''
   };
-
+ 
   const initialComment = document.getElementById('f_comment').value.trim();
   const result = await apiPost('addAudit', data);
   if (!checkWriteResult(result)){
@@ -776,19 +778,19 @@ async function saveAudit(){
   showToast('Auditoria desada');
   btn.disabled = false; btn.textContent = 'Guardar';
 }
-
+ 
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
-
+ 
 /* ── AI chat module (placeholder toggle only) ─────────────────────────── */
 document.getElementById('chatFab').addEventListener('click', ()=>{
   document.getElementById('chatPanel').classList.toggle('open');
 });
-
+ 
 const topFab = document.getElementById('topFab');
 window.addEventListener('scroll', ()=>{
   topFab.classList.toggle('show', window.scrollY > 400);
@@ -799,7 +801,7 @@ topFab.addEventListener('click', ()=>{
 document.getElementById('chatClose').addEventListener('click', ()=>{
   document.getElementById('chatPanel').classList.remove('open');
 });
-
+ 
 /* ── Wire up events ────────────────────────────────────────────────────── */
 document.getElementById('btnNew').addEventListener('click', openDrawer);
 document.getElementById('drawerClose').addEventListener('click', closeDrawer);
@@ -809,9 +811,9 @@ document.getElementById('btnSave').addEventListener('click', saveAudit);
 document.getElementById('filterManager').addEventListener('change', renderTable);
 document.getElementById('searchBox').addEventListener('input', renderTable);
 document.getElementById('btnRefresh').addEventListener('click', ()=>refresh(true));
-
+ 
 const POLL_MS = 30000; // re-check the sheet every 30s so other people's edits show up on their own
-
+ 
 function setSyncStatus(state, detail){
   const el = document.getElementById('syncStatus');
   const now = new Date().toLocaleTimeString('ca-ES', { hour:'2-digit', minute:'2-digit' });
@@ -826,7 +828,7 @@ function setSyncStatus(state, detail){
     el.innerHTML = `<span class="dot"></span> Actualitzat amb el Google Sheet a les ${now}`;
   }
 }
-
+ 
 async function refresh(userTriggered){
   setSyncStatus('syncing');
   try {
@@ -847,12 +849,12 @@ async function refresh(userTriggered){
     setSyncStatus('error', err.message);
   }
 }
-
+ 
 /* ── Google Sign-In gate ───────────────────────────────────────────────── */
 function handleCredentialResponse(response){
   const payload = JSON.parse(atob(response.credential.split(".")[1]));
   const email = payload.email || "";
-
+ 
   // This is just a fast, friendly UX check so people see the right message quickly.
   // The real gate is server-side: every API call sends this same raw token, and
   // Apps Script verifies it against Google directly before touching the sheet.
@@ -860,21 +862,21 @@ function handleCredentialResponse(response){
     alert("Accés restringit al personal de la institució.");
     return;
   }
-
+ 
   ID_TOKEN = response.credential; // the raw signed token — sent with every request from now on
-
+ 
   document.getElementById("login").style.display = "none";
   document.getElementById("private").style.display = "block";
   startApp();
 }
-
+ 
 /* ── Init (runs once sign-in succeeds) ────────────────────────────────── */
 function startApp(){
   document.getElementById('f_manager').addEventListener('change', suggestManagerEmailFromHistory);
   refresh();
-
+ 
   setInterval(()=>refresh(), POLL_MS);               // keeps other PMs' changes showing up automatically
   window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
 }
 </script>
-
+ 
