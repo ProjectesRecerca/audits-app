@@ -390,7 +390,7 @@
 const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyh8FJAjkoiilVhw2b1E01KAyJihzQ53ZdQLq92516kDIYdSAFMi6Aop7GnjG-X12o/exec"
 };
-
+ 
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
  
 const MONTHS = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
@@ -963,5 +963,4 @@ function startApp(){
   window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
 }
 </script>
- 
  
