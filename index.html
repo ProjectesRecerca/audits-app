@@ -1,8 +1,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-
+ 
 <style>
   :root{
     --bg:#F7F8FA;
@@ -201,7 +200,7 @@
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
  
-  /* ── AI chat module (placeholder — not wired up yet) ─────── */
+  /* ── AI chat module (read-only Q&A assistant) ─────── */
   .chat-fab{
     position:fixed; bottom:24px; right:24px; width:52px; height:52px; border-radius:50%;
     background:var(--navy); color:#fff; border:none; font-size:22px; cursor:pointer;
@@ -233,16 +232,21 @@
   .chat-head{ padding:14px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
   .chat-head b{ font-size:13.5px; }
   .chat-head .tag{ font-size:10.5px; background:#EEF1F6; color:var(--navy); padding:2px 8px; border-radius:10px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .chat-scope-note{ font-size:11.5px; color:var(--muted); padding:8px 16px; border-bottom:1px solid var(--line); background:#FAFAF8; }
   .chat-close{ background:none; border:none; font-size:16px; color:var(--muted); cursor:pointer; }
-  .chat-body{ padding:14px 16px; font-size:13px; color:var(--ink); background:#FAFAF8; min-height:110px; }
+  .chat-body{ padding:14px 16px; font-size:13px; color:var(--ink); background:#FAFAF8; min-height:110px; max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
   .chat-bubble{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; line-height:1.5; }
   .chat-bubble .examples{ color:var(--muted); font-size:12px; margin-top:8px; }
+  .chat-msg{ max-width:88%; padding:9px 12px; border-radius:10px; line-height:1.5; white-space:pre-wrap; }
+  .chat-msg.user{ align-self:flex-end; background:var(--navy); color:#fff; border-bottom-right-radius:3px; }
+  .chat-msg.assistant{ align-self:flex-start; background:#fff; border:1px solid var(--line); border-bottom-left-radius:3px; }
+  .chat-msg.error{ align-self:flex-start; background:#FEF2F2; border:1px solid #FCA5A5; color:#991B1B; }
+  .chat-msg.loading{ align-self:flex-start; background:#fff; border:1px solid var(--line); color:var(--muted); font-style:italic; }
   .chat-input-row{ display:flex; gap:8px; padding:12px; border-top:1px solid var(--line); }
   .chat-input-row input{ flex:1; }
-  .chat-input-row input:disabled{ background:#F3F4F6; color:var(--muted); }
+  .chat-input-row input:disabled, .chat-input-row button:disabled{ background:#F3F4F6; color:var(--muted); cursor:not-allowed; }
 </style>
  
-
 <!-- ── LOGIN GATE ──────────────────────────────────────────────────────────
      Fill in your OAuth client_id below, and your institutional domain in
      handleCredentialResponse(). This entire block mirrors the pattern
@@ -251,19 +255,19 @@
   <div class="login-card">
     <div class="logo-mark">◎</div>
     <h2>Seguiment d'Auditories</h2>
-    <p>Servei de Recerca - Universitat Pompeu Fabra<br>Accés restringit al personal de la institució.</p>
+    <p>Servei de Recerca -<br>Accés restringit al personal de la institució.</p>
     <div id="g_id_onload"
-         data-client_id="871231787095-ug0o6pu89sn0t6i97s0nagakohighot8.apps.googleusercontent.com"
+         data-client_id="xxxxx.apps.googleusercontent.com"
          data-callback="handleCredentialResponse"
          data-auto_prompt="false">
     </div>
     <div class="g_id_signin" data-type="standard"></div>
   </div>
 </div>
-
+ 
 <div id="private" style="display:none;">
 <div class="app">
-
+ 
   <div class="topbar">
     <div style="display:flex; align-items:center; gap:12px;">
       <div class="logo-mark">◎</div>
@@ -280,13 +284,13 @@
     </div>
   </div>
   <div class="sync-status" id="syncStatus">Sincronitzant…</div>
-
+ 
   <div class="month-nav" id="monthNav"></div>
-
+ 
   <div id="tableContainer"></div>
 </div>
 </div>
-
+ 
 <div class="overlay" id="overlay"></div>
 <div class="drawer" id="drawer">
   <div class="drawer-head">
@@ -349,34 +353,35 @@
     <button class="btn btn-primary" id="btnSave">Guardar</button>
   </div>
 </div>
-
-<!-- ── AI chat module (UI only — not functional yet) ────────────────────── -->
-<button class="chat-fab" id="chatFab" title="Assistent (properament)">💬</button>
+ 
+<!-- ── AI chat module (read-only Q&A over current audits) ────────────────── -->
+<button class="chat-fab" id="chatFab" title="Assistent d'auditories">💬</button>
 <button class="top-fab" id="topFab" title="Torna a dalt">↑</button>
 <div class="chat-panel" id="chatPanel">
   <div class="chat-head">
     <b>Assistent d'auditories</b>
-    <span class="tag">Aviat disponible</span>
+    <span class="tag">Consulta</span>
     <button class="chat-close" id="chatClose">✕</button>
   </div>
-  <div class="chat-body">
+  <div class="chat-scope-note" id="chatScopeNote"></div>
+  <div class="chat-body" id="chatBody">
     <div class="chat-bubble">
-      👋 Aquesta funció encara no està activa. Properament podràs preguntar coses com:
+      👋 Puc respondre preguntes sobre les auditories que ja hi ha a la taula. No puc crear ni modificar res encara — per exemple:
       <div class="examples">
         · "Resumeix els comentaris oberts de les auditories pendents"<br>
         · "Quins projectes no tenen data d'enviament tot i necessitar auditoria?"<br>
-        · "Redacta un recordatori per a la gestora sobre l'auditoria de X"
+        · "Redacta un esborrany de recordatori per a la gestora sobre l'auditoria de X"
       </div>
     </div>
   </div>
   <div class="chat-input-row">
-    <input type="text" placeholder="Properament disponible…" disabled>
-    <button class="btn btn-ghost" disabled>Enviar</button>
+    <input type="text" id="chatInput" placeholder="Pregunta alguna cosa…">
+    <button class="btn btn-ghost" id="chatSend">Enviar</button>
   </div>
 </div>
-
+ 
 <div class="toast" id="toast"></div>
-
+ 
 <script>
 /* ────────────────────────────────────────────────────────────────────────
    CONFIG — point this at your real Apps Script Web App once deployed.
@@ -385,7 +390,6 @@
 const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyh8FJAjkoiilVhw2b1E01KAyJihzQ53ZdQLq92516kDIYdSAFMi6Aop7GnjG-X12o/exec"
 };
-
 
 let ID_TOKEN = null; // set once Google Sign-In succeeds — sent with every request, verified server-side
  
@@ -811,10 +815,19 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 2200);
 }
  
-/* ── AI chat module (placeholder toggle only) ─────────────────────────── */
+/* ── AI chat module — read-only Q&A over the current audits ─────────────── */
+function updateChatScopeNote(){
+  const manager = document.getElementById('filterManager').value;
+  document.getElementById('chatScopeNote').textContent = manager
+    ? '🔎 Consultant només auditories de: ' + manager
+    : '🔎 Consultant totes les gestores (canvia el filtre de la taula per acotar)';
+}
+ 
 document.getElementById('chatFab').addEventListener('click', ()=>{
   document.getElementById('chatPanel').classList.toggle('open');
+  updateChatScopeNote();
 });
+document.getElementById('filterManager').addEventListener('change', updateChatScopeNote);
  
 const topFab = document.getElementById('topFab');
 window.addEventListener('scroll', ()=>{
@@ -825,6 +838,52 @@ topFab.addEventListener('click', ()=>{
 });
 document.getElementById('chatClose').addEventListener('click', ()=>{
   document.getElementById('chatPanel').classList.remove('open');
+});
+ 
+function appendChatMsg(role, text){
+  const body = document.getElementById('chatBody');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  return div;
+}
+ 
+async function sendChatMessage(){
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSend');
+  const question = input.value.trim();
+  if (!question) return;
+ 
+  appendChatMsg('user', question);
+  input.value = '';
+  input.disabled = true;
+  sendBtn.disabled = true;
+  const loadingEl = appendChatMsg('loading', 'Pensant…');
+ 
+  try {
+    const managerFilter = document.getElementById('filterManager').value;
+    const result = await apiPost('askChatbot', { question, manager: managerFilter });
+    loadingEl.remove();
+    if (result && result.error){
+      appendChatMsg('error', 'Error: ' + result.error);
+    } else {
+      appendChatMsg('assistant', result.answer || '(sense resposta)');
+    }
+  } catch (err){
+    loadingEl.remove();
+    appendChatMsg('error', 'Error de connexió: ' + err.message);
+  } finally {
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+ 
+document.getElementById('chatSend').addEventListener('click', sendChatMessage);
+document.getElementById('chatInput').addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter') sendChatMessage();
 });
  
 /* ── Wire up events ────────────────────────────────────────────────────── */
