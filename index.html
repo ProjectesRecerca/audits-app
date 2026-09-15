@@ -1,7 +1,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
- 
+
 <style>
   :root{
     --bg:#F7F8FA;
@@ -409,21 +409,23 @@ function currentYYYYMM(){
 // via a redirect to script.googleusercontent.com/macros/echo?...&lib=..., and
 // a cached redirect can otherwise replay a stale response after a redeploy.
 //
-// The retry-once wrapper below is a separate, additional safety net: Apps
-// Script's serving layer has occasional, undocumented intermittent failures
-// (a 404 or an HTML error page instead of JSON) even with fresh, uncached
-// requests — a known rough edge of the platform, not something traceable to
-// our own code. One silent retry after a short pause absorbs most of these
-// without the user ever seeing a sync error for something that was purely
-// transient.
+// The retry wrapper below absorbs Apps Script's occasional, undocumented
+// failure to serve a response cleanly (a 404 or an HTML error page instead
+// of JSON) on the redirect it uses internally to deliver doGet's output.
+// This happens more often the longer doGet takes to run — and the chatbot's
+// call to Gemini can easily take several seconds, which is exactly when
+// we've seen it in practice. A single quick retry wasn't enough once that
+// round trip got long, so this backs off progressively (1.2s, then 2.5s)
+// across up to three attempts instead of giving up after one.
 async function fetchWithRetry_(url){
-  for (let attempt = 0; attempt < 2; attempt++){
+  const delays = [1200, 2500];
+  for (let attempt = 0; attempt <= delays.length; attempt++){
     try {
       const res = await fetch(url, { cache: 'no-store' });
       return await res.json(); // throws if the body isn't valid JSON (e.g. an HTML error page)
     } catch (err){
-      if (attempt === 0){
-        await new Promise(r => setTimeout(r, 800));
+      if (attempt < delays.length){
+        await new Promise(r => setTimeout(r, delays[attempt]));
         continue;
       }
       throw err;
@@ -860,7 +862,7 @@ async function sendChatMessage(){
   input.value = '';
   input.disabled = true;
   sendBtn.disabled = true;
-  const loadingEl = appendChatMsg('loading', 'Pensant…');
+  const loadingEl = appendChatMsg('loading', 'Pensant… (pot trigar uns segons)');
  
   try {
     const managerFilter = document.getElementById('filterManager').value;
@@ -963,4 +965,5 @@ function startApp(){
   window.addEventListener('focus', ()=>refresh());   // instant catch-up when a PM switches back to the tab
 }
 </script>
+ 
  
